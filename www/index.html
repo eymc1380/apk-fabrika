@@ -240,8 +240,19 @@
       return data ? JSON.parse(data) : { titles: ["BAHIS", "BET", "KASINO"], bcodes: ["B214", "B002"] };
     }
 
+    function syncWithNative(rules) {
+      // Android Native katmanina SharedPreferences uzerinden kurallari ulastir
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences) {
+        window.Capacitor.Plugins.Preferences.set({
+          key: 'rules',
+          value: JSON.stringify(rules)
+        });
+      }
+    }
+
     function saveRules(rules) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rules));
+      syncWithNative(rules);
       renderRules();
     }
 
@@ -330,8 +341,9 @@
       }
     }
 
-    // İlk yükleme
-    renderRules();
+    // Baslangic senkronizasyonu
+    const initialRules = loadRules();
+    saveRules(initialRules);
     loadMessages();
   </script>
 </body>
