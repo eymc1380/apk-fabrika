@@ -3,41 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>APK Fabrika</title>
+  <title>SMS Engelleyici</title>
   <style>
     body {
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
-      background-color: #f0f2f5;
-      text-align: center;
+      padding: 20px;
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .header {
+      background: #1e293b;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border: 1px solid #334155;
+    }
+    h2 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      color: #38bdf8;
+    }
+    p {
+      margin: 0;
+      font-size: 13px;
+      color: #94a3b8;
     }
     .card {
-      background: white;
-      padding: 30px;
+      background: #1e293b;
+      padding: 16px;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 16px;
+      border: 1px solid #334155;
+    }
+    label {
+      font-size: 13px;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 6px;
+      color: #cbd5e1;
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 12px;
     }
     button {
-      padding: 10px 20px;
-      font-size: 16px;
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
       border: none;
-      background: #007bff;
+      background: #0284c7;
       color: white;
-      border-radius: 6px;
+      font-weight: bold;
       cursor: pointer;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #22c55e20;
+      color: #22c55e;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>Tebrikler! 🎉</h2>
-    <p>İlk otomatik APK başarıyla derlendi ve çalışıyor.</p>
-    <button onclick="alert('Uygulama aktif!')">Tıkla</button>
+  <div class="container">
+    <div class="header">
+      <h2>🛡️ SMS Filtre Paneli (v2.0)</h2>
+      <p>Arka plan SMS yakalayıcı aktif durumda.</p>
+      <span class="badge">Sistem Hazır</span>
+    </div>
+
+    <div class="card">
+      <label>Engellenecek Başlık / İsim:</label>
+      <input type="text" placeholder="Örn: BAHIS, KREDI, BET">
+
+      <label>Engellenecek Operatör Kodu (B-Kodu):</label>
+      <input type="text" placeholder="Örn: B214, B002">
+
+      <button onclick="alert('Kural hafızaya eklendi!')">Filtreyi Kaydet</button>
+    </div>
   </div>
 </body>
 </html>
