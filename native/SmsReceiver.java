@@ -12,31 +12,41 @@ public class SmsReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if ("android.provider.Telephony.SMS_DELIVER".equals(intent.getAction()) ||
-            "android.provider.Telephony.SMS_RECEIVED".equals(intent.getAction())) {
+        Log.d(TAG, ">>> SMS RECEIVER TETIKLENDI! Eylem: " + intent.getAction());
 
-            Bundle bundle = intent.getExtras();
-            if (bundle != null) {
-                Object[] pdus = (Object[]) bundle.get("pdus");
-                String format = bundle.getString("format");
+        Bundle bundle = intent.getExtras();
+        if (bundle == null) {
+            Log.d(TAG, "Veri paketi (bundle) bos geldi.");
+            return;
+        }
 
-                if (pdus != null) {
-                    for (Object pdu : pdus) {
-                        SmsMessage sms;
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                            sms = SmsMessage.createFromPdu((byte[]) pdu, format);
-                        } else {
-                            sms = SmsMessage.createFromPdu((byte[]) pdu);
-                        }
+        // 1. Manuel terminal testinden gelen verileri yakala
+        String testSender = bundle.getString("sender");
+        String testBody = bundle.getString("body");
+        if (testSender != null || testBody != null) {
+            Log.d(TAG, "[TEST SMS] Gonderici: " + testSender + " | Mesaj: " + testBody);
+            return;
+        }
 
-                        String sender = sms.getDisplayOriginatingAddress();
-                        String messageBody = sms.getMessageBody();
+        // 2. Gercek sebekeden gelen PDU paketlerini isle
+        Object[] pdus = (Object[]) bundle.get("pdus");
+        String format = bundle.getString("format");
 
-                        Log.d(TAG, "Gelen SMS Basligi: " + sender);
-                        Log.d(TAG, "Mesaj Icerigi: " + messageBody);
+        if (pdus != null) {
+            for (Object pdu : pdus) {
+                SmsMessage sms;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                    sms = SmsMessage.createFromPdu((byte[]) pdu, format);
+                } else {
+                    sms = SmsMessage.createFromPdu((byte[]) pdu);
+                }
 
-                        // Ilerleyen adimda filtre kontrolunu buraya baglayacagiz
-                    }
+                if (sms != null) {
+                    String sender = sms.getDisplayOriginatingAddress();
+                    String messageBody = sms.getMessageBody();
+
+                    Log.d(TAG, "[GERCEK SMS] Gonderici: " + sender);
+                    Log.d(TAG, "[GERCEK SMS] Mesaj: " + messageBody);
                 }
             }
         }
