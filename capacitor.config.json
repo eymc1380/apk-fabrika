@@ -1,0 +1,6 @@
+{
+  "appId": "com.erhan.apkfabrika",
+  "appName": "APK Fabrika",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
