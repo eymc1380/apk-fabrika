@@ -60,7 +60,7 @@ public class SmsReceiver extends BroadcastReceiver {
         body = body.trim();
 
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        String rulesJson = prefs.getString("rules", "{\"titles\":[], \"bcodes\":[]}");
+        String rulesJson = prefs.getString("rules", "{\"titles\":[\"BAHIS\",\"BET\",\"KASINO\"], \"bcodes\":[\"B214\",\"B002\"]}");
 
         boolean engellendi = false;
         String engelSebebi = "";
