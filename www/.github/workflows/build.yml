@@ -1,0 +1,43 @@
+name: Otomatik APK Derleyici
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Repo kodlarini cek
+        uses: actions/checkout@v4
+
+      - name: 2. Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 3. Java JDK 21 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: 4. Capacitor hazirla ve Android projesini olustur
+        run: |
+          npm install
+          npx cap add android
+          npx cap sync
+
+      - name: 5. APK dosyasini derle
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: 6. Uretilen APK dosyasini yukle
+        uses: actions/upload-artifact@v4
+        with:
+          name: APK-Fabrika-Debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
