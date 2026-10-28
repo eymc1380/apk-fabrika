@@ -3,99 +3,336 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SMS Engelleyici</title>
+  <title>SMS Filtre & Karantina</title>
   <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #161e2e;
+      --border: #243046;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --primary: #0284c7;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
-      padding: 20px;
-      background-color: #0f172a;
-      color: #f8fafc;
-    }
-    .container {
-      max-width: 500px;
-      margin: 0 auto;
+      padding: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      -webkit-user-select: none;
+      user-select: none;
     }
     .header {
-      background: #1e293b;
       padding: 16px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      border: 1px solid #334155;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    h2 {
-      margin: 0 0 8px 0;
-      font-size: 18px;
+    .header h1 {
+      font-size: 17px;
+      margin: 0;
+      font-weight: 700;
       color: #38bdf8;
     }
-    p {
-      margin: 0;
+    .tabs {
+      display: flex;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
       font-size: 13px;
-      color: #94a3b8;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: #38bdf8;
+      border-bottom-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.05);
+    }
+    .content {
+      padding: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
     }
     .card {
-      background: #1e293b;
-      padding: 16px;
-      border-radius: 12px;
-      margin-bottom: 16px;
-      border: 1px solid #334155;
-    }
-    label {
-      font-size: 13px;
-      font-weight: bold;
-      display: block;
-      margin-bottom: 6px;
-      color: #cbd5e1;
-    }
-    input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #475569;
-      background: #0f172a;
-      color: #fff;
-      font-size: 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
       margin-bottom: 12px;
     }
-    button {
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
+    input[type="text"] {
       width: 100%;
-      padding: 12px;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      background: #0d131f;
+      border: 1px solid var(--border);
       border-radius: 8px;
+      color: #fff;
+      font-size: 13px;
+      margin-bottom: 10px;
+      outline: none;
+    }
+    input[type="text"]:focus {
+      border-color: var(--primary);
+    }
+    .btn {
+      width: 100%;
+      padding: 10px;
       border: none;
-      background: #0284c7;
-      color: white;
-      font-weight: bold;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
     }
-    .badge {
-      display: inline-block;
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    
+    .tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .tag {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: #38bdf8;
       padding: 4px 8px;
-      background: #22c55e20;
-      color: #22c55e;
       border-radius: 6px;
       font-size: 12px;
-      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tag .remove-btn {
+      cursor: pointer;
+      font-weight: bold;
+      color: #f87171;
+    }
+
+    .sms-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .sms-item.spam {
+      border-left: 4px solid var(--danger);
+    }
+    .sms-item.inbox {
+      border-left: 4px solid var(--success);
+    }
+    .sms-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+    .sms-date {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+    .sms-body {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .sms-reason {
+      font-size: 11px;
+      color: #f87171;
+      margin-top: 6px;
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 40px 10px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h2>🛡️ SMS Filtre Paneli (v2.0)</h2>
-      <p>Arka plan SMS yakalayıcı aktif durumda.</p>
-      <span class="badge">Sistem Hazır</span>
+
+  <div class="header">
+    <h1>🛡️ SMS Filtreleme</h1>
+    <span style="font-size: 11px; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 8px; border-radius: 12px;">Aktif</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('inbox')">Gelenler</button>
+    <button class="tab-btn" onclick="switchTab('rules')">Kurallar</button>
+    <button class="tab-btn" onclick="switchTab('spam')">Spam / Karantina</button>
+  </div>
+
+  <div class="content">
+    <!-- 1. SEKME: GELENLER -->
+    <div id="tab-inbox" class="tab-pane active">
+      <div id="inbox-list"></div>
     </div>
 
-    <div class="card">
-      <label>Engellenecek Başlık / İsim:</label>
-      <input type="text" placeholder="Örn: BAHIS, KREDI, BET">
+    <!-- 2. SEKME: KURALLAR -->
+    <div id="tab-rules" class="tab-pane">
+      <div class="card">
+        <label>Engellenecek Başlık / İsim (Örn: BAHIS, KREDI)</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="input-title" placeholder="Kelime veya başlık girin">
+          <button class="btn btn-primary" style="width: 80px;" onclick="addRule('titles')">Ekle</button>
+        </div>
+        <div id="tags-titles" class="tag-container"></div>
+      </div>
 
-      <label>Engellenecek Operatör Kodu (B-Kodu):</label>
-      <input type="text" placeholder="Örn: B214, B002">
+      <div class="card">
+        <label>Engellenecek Operatör Kodu (Örn: B214, B002)</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="input-bcode" placeholder="Örn: B214">
+          <button class="btn btn-primary" style="width: 80px;" onclick="addRule('bcodes')">Ekle</button>
+        </div>
+        <div id="tags-bcodes" class="tag-container"></div>
+      </div>
+    </div>
 
-      <button onclick="alert('Kural hafızaya eklendi!')">Filtreyi Kaydet</button>
+    <!-- 3. SEKME: SPAM / KARANTİNA -->
+    <div id="tab-spam" class="tab-pane">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+        <button class="btn btn-danger" style="width: auto; padding: 6px 12px;" onclick="clearSpam()">Karantinayı Temizle</button>
+      </div>
+      <div id="spam-list"></div>
     </div>
   </div>
+
+  <script>
+    const STORAGE_KEY = "SMS_FILTER_RULES";
+
+    function loadRules() {
+      const data = localStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : { titles: ["BAHIS", "BET", "KASINO"], bcodes: ["B214", "B002"] };
+    }
+
+    function saveRules(rules) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(rules));
+      renderRules();
+    }
+
+    function addRule(type) {
+      const input = document.getElementById(type === 'titles' ? 'input-title' : 'input-bcode');
+      const val = input.value.trim().toUpperCase();
+      if (!val) return;
+
+      const rules = loadRules();
+      if (!rules[type].includes(val)) {
+        rules[type].push(val);
+        saveRules(rules);
+      }
+      input.value = "";
+    }
+
+    function removeRule(type, val) {
+      const rules = loadRules();
+      rules[type] = rules[type].filter(item => item !== val);
+      saveRules(rules);
+    }
+
+    function renderRules() {
+      const rules = loadRules();
+      ['titles', 'bcodes'].forEach(type => {
+        const container = document.getElementById(`tags-${type}`);
+        container.innerHTML = rules[type].map(item => `
+          <div class="tag">
+            <span>${item}</span>
+            <span class="remove-btn" onclick="removeRule('${type}', '${item}')">&times;</span>
+          </div>
+        `).join('');
+      });
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+      event.target.classList.add('active');
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+
+      if (tabId === 'inbox' || tabId === 'spam') loadMessages();
+    }
+
+    function loadMessages() {
+      const inboxList = JSON.parse(localStorage.getItem("INBOX_SMS") || "[]");
+      const spamList = JSON.parse(localStorage.getItem("SPAM_SMS") || "[]");
+
+      const inboxContainer = document.getElementById('inbox-list');
+      if (inboxList.length === 0) {
+        inboxContainer.innerHTML = '<div class="empty-state">Henüz gelen güvenli bir mesaj yok.</div>';
+      } else {
+        inboxContainer.innerHTML = inboxList.map(m => `
+          <div class="sms-item inbox">
+            <div class="sms-header">
+              <span>${m.sender}</span>
+              <span class="sms-date">${m.date}</span>
+            </div>
+            <div class="sms-body">${m.body}</div>
+          </div>
+        `).join('');
+      }
+
+      const spamContainer = document.getElementById('spam-list');
+      if (spamList.length === 0) {
+        spamContainer.innerHTML = '<div class="empty-state">Karantinada engellenmiş mesaj bulunmuyor.</div>';
+      } else {
+        spamContainer.innerHTML = spamList.map(m => `
+          <div class="sms-item spam">
+            <div class="sms-header">
+              <span>${m.sender}</span>
+              <span class="sms-date">${m.date}</span>
+            </div>
+            <div class="sms-body">${m.body}</div>
+            <div class="sms-reason">🚨 ${m.reason}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function clearSpam() {
+      if (confirm("Karantinadaki mesajlar silinsin mi?")) {
+        localStorage.setItem("SPAM_SMS", "[]");
+        loadMessages();
+      }
+    }
+
+    // İlk yükleme
+    renderRules();
+    loadMessages();
+  </script>
 </body>
 </html>
