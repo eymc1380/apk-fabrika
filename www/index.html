@@ -235,24 +235,28 @@
   <script>
     const STORAGE_KEY = "SMS_FILTER_RULES";
 
-    function loadRules() {
-      const data = localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : { titles: ["BAHIS", "BET", "KASINO"], bcodes: ["B214", "B002"] };
+    function getBridge() {
+      return window.AndroidBridge || null;
     }
 
-    function syncWithNative(rules) {
-      // Android Native katmanina SharedPreferences uzerinden kurallari ulastir
-      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences) {
-        window.Capacitor.Plugins.Preferences.set({
-          key: 'rules',
-          value: JSON.stringify(rules)
-        });
+    function loadRules() {
+      const bridge = getBridge();
+      if (bridge && bridge.getMessages) {
+        try {
+          const rules = bridge.getMessages("rules");
+          if (rules && rules !== "[]") return JSON.parse(rules);
+        } catch(e) {}
       }
+      const local = localStorage.getItem(STORAGE_KEY);
+      return local ? JSON.parse(local) : { titles: ["BAHIS", "BET", "KASINO"], bcodes: ["B214", "B002"] };
     }
 
     function saveRules(rules) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rules));
-      syncWithNative(rules);
+      const bridge = getBridge();
+      if (bridge && bridge.saveRules) {
+        bridge.saveRules(JSON.stringify(rules));
+      }
       renderRules();
     }
 
@@ -299,14 +303,25 @@
     }
 
     function loadMessages() {
-      const inboxList = JSON.parse(localStorage.getItem("INBOX_SMS") || "[]");
-      const spamList = JSON.parse(localStorage.getItem("SPAM_SMS") || "[]");
+      const bridge = getBridge();
+      let inboxList = [];
+      let spamList = [];
+
+      if (bridge && bridge.getMessages) {
+        try {
+          inboxList = JSON.parse(bridge.getMessages("inbox_messages"));
+          spamList = JSON.parse(bridge.getMessages("spam_messages"));
+        } catch(e) {}
+      } else {
+        inboxList = JSON.parse(localStorage.getItem("INBOX_SMS") || "[]");
+        spamList = JSON.parse(localStorage.getItem("SPAM_SMS") || "[]");
+      }
 
       const inboxContainer = document.getElementById('inbox-list');
       if (inboxList.length === 0) {
         inboxContainer.innerHTML = '<div class="empty-state">Henüz gelen güvenli bir mesaj yok.</div>';
       } else {
-        inboxContainer.innerHTML = inboxList.map(m => `
+        inboxContainer.innerHTML = inboxList.slice().reverse().map(m => `
           <div class="sms-item inbox">
             <div class="sms-header">
               <span>${m.sender}</span>
@@ -321,7 +336,7 @@
       if (spamList.length === 0) {
         spamContainer.innerHTML = '<div class="empty-state">Karantinada engellenmiş mesaj bulunmuyor.</div>';
       } else {
-        spamContainer.innerHTML = spamList.map(m => `
+        spamContainer.innerHTML = spamList.slice().reverse().map(m => `
           <div class="sms-item spam">
             <div class="sms-header">
               <span>${m.sender}</span>
@@ -336,14 +351,18 @@
 
     function clearSpam() {
       if (confirm("Karantinadaki mesajlar silinsin mi?")) {
+        const bridge = getBridge();
+        if (bridge && bridge.clearMessages) {
+          bridge.clearMessages("spam_messages");
+        }
         localStorage.setItem("SPAM_SMS", "[]");
         loadMessages();
       }
     }
 
-    // Baslangic senkronizasyonu
-    const initialRules = loadRules();
-    saveRules(initialRules);
+    // Başlangıç senkronizasyonu
+    const currentRules = loadRules();
+    saveRules(currentRules);
     loadMessages();
   </script>
 </body>
