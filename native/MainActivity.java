@@ -8,11 +8,14 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.telephony.SmsManager;
+import android.telephony.SubscriptionInfo;
+import android.telephony.SubscriptionManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -133,9 +136,38 @@ public class MainActivity extends BridgeActivity {
             }
 
             @JavascriptInterface
-            public boolean sendSms(String phoneNumber, String message) {
+            public String getActiveSimSlots() {
+                JSONArray simArray = new JSONArray();
                 try {
-                    SmsManager smsManager = SmsManager.getDefault();
+                    SubscriptionManager sm = (SubscriptionManager) getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
+                    List<SubscriptionInfo> infoList = sm.getActiveSubscriptionInfoList();
+                    if (infoList != null) {
+                        for (SubscriptionInfo info : infoList) {
+                            JSONObject simObj = new JSONObject();
+                            simObj.put("subId", info.getSubscriptionId());
+                            simObj.put("slotIndex", info.getSimSlotIndex() + 1); // 1 veya 2
+                            CharSequence carrier = info.getCarrierName();
+                            simObj.put("carrier", carrier != null ? carrier.toString() : ("SIM " + (info.getSimSlotIndex() + 1)));
+                            simArray.put(simObj);
+                        }
+                    }
+                } catch (SecurityException se) {
+                    se.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return simArray.toString();
+            }
+
+            @JavascriptInterface
+            public boolean sendSms(String phoneNumber, String message, int subId) {
+                try {
+                    SmsManager smsManager;
+                    if (subId > 0 && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP_MR1) {
+                        smsManager = SmsManager.getSmsManagerForSubscriptionId(subId);
+                    } else {
+                        smsManager = SmsManager.getDefault();
+                    }
                     smsManager.sendTextMessage(phoneNumber, null, message, null, null);
 
                     SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
@@ -146,6 +178,7 @@ public class MainActivity extends BridgeActivity {
                     sentObj.put("id", System.currentTimeMillis());
                     sentObj.put("recipient", phoneNumber);
                     sentObj.put("body", message);
+                    sentObj.put("simSlot", subId > 0 ? ("SIM") : "SIM 1");
                     
                     SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
                     sentObj.put("date", sdf.format(new Date()));
@@ -239,13 +272,14 @@ public class MainActivity extends BridgeActivity {
                     JSONArray spamArray = new JSONArray(prefs.getString("spam_messages", "[]"));
 
                     ContentResolver cr = getContentResolver();
-                    Cursor cursor = cr.query(Uri.parse("content://sms"), null, null, null, "date DESC LIMIT 150");
+                    Cursor cursor = cr.query(Uri.parse("content://sms"), null, null, null, "date DESC LIMIT 300");
 
                     if (cursor != null && cursor.moveToFirst()) {
                         int addressIdx = cursor.getColumnIndex("address");
                         int bodyIdx = cursor.getColumnIndex("body");
                         int dateIdx = cursor.getColumnIndex("date");
                         int typeIdx = cursor.getColumnIndex("type");
+                        int subIdIdx = cursor.getColumnIndex("sub_id"); // Dual SIM kimliği
 
                         SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
 
@@ -254,9 +288,11 @@ public class MainActivity extends BridgeActivity {
                             String body = cursor.getString(bodyIdx);
                             long timestamp = cursor.getLong(dateIdx);
                             int type = cursor.getInt(typeIdx);
+                            int subId = subIdIdx != -1 ? cursor.getInt(subIdIdx) : 1;
 
                             if (address == null || body == null) continue;
 
+                            String simTag = "SIM " + (subId <= 1 ? "1" : "2");
                             String formattedDate = sdf.format(new Date(timestamp));
 
                             if (type == 2) {
@@ -265,6 +301,7 @@ public class MainActivity extends BridgeActivity {
                                 sentItem.put("recipient", address);
                                 sentItem.put("body", body);
                                 sentItem.put("date", formattedDate);
+                                sentItem.put("simSlot", simTag);
                                 sentArray.put(sentItem);
                                 importedCount++;
                             } else {
@@ -302,6 +339,7 @@ public class MainActivity extends BridgeActivity {
                                 msg.put("sender", address);
                                 msg.put("body", isSpam ? body.replaceAll("https?://\\S+", "[BAGLANTI ETKISIZLESTIRILDI]") : body);
                                 msg.put("date", formattedDate);
+                                msg.put("simSlot", simTag);
 
                                 if (isSpam) {
                                     msg.put("reason", reason);
