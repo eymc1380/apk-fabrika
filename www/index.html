@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SMS Filtre & Karantina</title>
+  <title>SMS Mesajlar</title>
   <style>
     :root {
       --bg: #0b0f19;
@@ -15,6 +15,8 @@
       --primary-hover: #0369a1;
       --danger: #ef4444;
       --success: #10b981;
+      --bubble-in: #1e293b;
+      --bubble-out: #0369a1;
     }
 
     body {
@@ -29,7 +31,7 @@
 
     .header {
       background-color: #0d1527;
-      padding: 16px;
+      padding: 14px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -38,7 +40,7 @@
 
     .header h1 {
       margin: 0;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 600;
       display: flex;
       align-items: center;
@@ -79,7 +81,7 @@
     }
 
     .content {
-      padding: 16px;
+      padding: 14px;
       padding-bottom: 80px;
     }
 
@@ -106,14 +108,20 @@
       padding: 12px 14px;
       margin-bottom: 10px;
       position: relative;
+      cursor: pointer;
     }
 
     .sms-item.inbox {
       border-left: 4px solid var(--success);
     }
 
+    .sms-item.sent {
+      border-left: 4px solid var(--primary);
+    }
+
     .sms-item.spam {
       border-left: 4px solid var(--danger);
+      cursor: default;
     }
 
     .sms-header {
@@ -127,6 +135,13 @@
       font-weight: bold;
       font-size: 0.95rem;
       color: #fff;
+    }
+
+    .sms-sender .sender-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: normal;
+      margin-left: 6px;
     }
 
     .sms-meta {
@@ -177,6 +192,28 @@
       color: var(--text-muted);
       padding: 40px 10px;
       font-size: 0.9rem;
+    }
+
+    .sub-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .sub-tab-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: #1e293b;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .sub-tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
     }
 
     .input-group {
@@ -243,7 +280,6 @@
       font-weight: bold;
     }
 
-    /* FAB Buton */
     .fab-btn {
       position: fixed;
       right: 20px;
@@ -261,12 +297,111 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
       cursor: pointer;
       z-index: 100;
-      transition: transform 0.2s, background-color 0.2s;
+      transition: transform 0.2s;
     }
 
     .fab-btn:active {
       transform: scale(0.95);
-      background-color: var(--primary-hover);
+    }
+
+    /* Tam Ekran Sohbet Penceresi (Chat Thread View) */
+    .chat-view {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      z-index: 300;
+      display: none;
+      flex-direction: column;
+    }
+
+    .chat-view.open {
+      display: flex;
+    }
+
+    .chat-header {
+      background: #0d1527;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chat-back-btn {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+
+    .chat-body {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chat-bubble {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .chat-bubble.in {
+      align-self: flex-start;
+      background: var(--bubble-in);
+      border-bottom-left-radius: 2px;
+    }
+
+    .chat-bubble.out {
+      align-self: flex-end;
+      background: var(--bubble-out);
+      color: #fff;
+      border-bottom-right-radius: 2px;
+    }
+
+    .bubble-time {
+      font-size: 0.68rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .chat-footer {
+      background: #0d1527;
+      padding: 10px 12px;
+      display: flex;
+      gap: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .chat-footer input {
+      flex: 1;
+      background: #161e2e;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 20px;
+      outline: none;
+    }
+
+    .chat-footer button {
+      background: var(--primary);
+      border: none;
+      color: #fff;
+      padding: 0 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
     }
 
     /* Modal */
@@ -297,7 +432,6 @@
       width: 100%;
       max-width: 420px;
       padding: 20px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     }
 
     .modal-card h2 {
@@ -315,47 +449,30 @@
       font-size: 1.4rem;
       cursor: pointer;
     }
-
-    .form-group {
-      margin-bottom: 14px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-    }
-
-    .form-group input, .form-group textarea {
-      width: 100%;
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 16px;
-    }
   </style>
 </head>
 <body>
 
   <div class="header">
-    <h1>🛡️ SMS Filtreleme</h1>
+    <h1>💬 Mesajlar</h1>
     <span class="badge-status">Varsayılan SMS</span>
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('inbox')">Gelenler</button>
-    <button class="tab-btn" onclick="switchTab('rules')">Kurallar</button>
-    <button class="tab-btn" onclick="switchTab('spam')">Spam / Karantina</button>
+    <button class="tab-btn active" onclick="switchMainTab('messages')">Mesajlar</button>
+    <button class="tab-btn" onclick="switchMainTab('rules')">Kurallar</button>
+    <button class="tab-btn" onclick="switchMainTab('spam')">Spam / Karantina</button>
   </div>
 
   <div class="content">
-    <!-- GELENLER SEKMESİ -->
-    <div id="tab-inbox" class="tab-pane active">
-      <div id="inbox-list"></div>
+    <!-- MESAJLAR SEKMESİ (Gelenler ve Gidenler) -->
+    <div id="tab-messages" class="tab-pane active">
+      <div class="sub-tabs">
+        <button class="sub-tab-btn active" onclick="switchSubTab('all')">Tümü</button>
+        <button class="sub-tab-btn" onclick="switchSubTab('inbox')">Gelenler</button>
+        <button class="sub-tab-btn" onclick="switchSubTab('sent')">Gidenler</button>
+      </div>
+      <div id="messages-list"></div>
     </div>
 
     <!-- KURALLAR SEKMESİ -->
@@ -390,8 +507,8 @@
     </div>
   </div>
 
-  <!-- YENİ MESAJ YAZ FAB BUTONU -->
-  <button class="fab-btn" onclick="openComposeModal()" title="Yeni Mesaj Yaz">✏️</button>
+  <!-- YENİ MESAJ FAB BUTONU -->
+  <button class="fab-btn" onclick="openComposeModal()" title="Yeni Mesaj">✏️</button>
 
   <!-- YENİ MESAJ MODALI -->
   <div id="compose-modal" class="modal-overlay">
@@ -400,30 +517,90 @@
         <span>Yeni SMS Gönder</span>
         <button class="close-btn" onclick="closeComposeModal()">&times;</button>
       </h2>
-      <div class="form-group">
-        <label for="compose-phone">Alıcı Telefon Numarası</label>
-        <input type="tel" id="compose-phone" placeholder="Örn: 05551234567">
+      <div style="margin-bottom: 12px;">
+        <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">Alıcı Numara</label>
+        <input type="tel" id="compose-phone" placeholder="Örn: 05551234567" style="width:100%;">
       </div>
-      <div class="form-group">
-        <label for="compose-message">Mesaj Metni</label>
-        <textarea id="compose-message" rows="4" placeholder="Mesajınızı yazın..."></textarea>
+      <div style="margin-bottom: 16px;">
+        <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">Mesaj</label>
+        <textarea id="compose-message" rows="4" placeholder="Mesajınızı yazın..." style="width:100%;"></textarea>
       </div>
-      <div class="modal-actions">
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
         <button class="btn-primary" style="background:transparent; border:1px solid var(--border);" onclick="closeComposeModal()">İptal</button>
         <button class="btn-primary" onclick="handleSendSms()">Gönder 🚀</button>
       </div>
     </div>
   </div>
 
+  <!-- SOHBET PENCERESİ (CHAT VIEW) -->
+  <div id="chat-view" class="chat-view">
+    <div class="chat-header">
+      <button class="chat-back-btn" onclick="closeChatView()">&larr;</button>
+      <div>
+        <div id="chat-title" style="font-weight:bold; font-size:0.95rem;">-</div>
+        <div id="chat-sub" style="font-size:0.75rem; color:var(--text-muted);">-</div>
+      </div>
+    </div>
+    <div id="chat-body" class="chat-body"></div>
+    <div class="chat-footer">
+      <input type="text" id="chat-input" placeholder="Mesaj yaz..." onkeypress="if(event.key === 'Enter') sendReplySms()">
+      <button onclick="sendReplySms()">Gönder</button>
+    </div>
+  </div>
+
   <script>
     const STORAGE_KEY = "SMS_FILTER_RULES";
+    const contactCache = {};
+    let currentFilter = 'all';
+    let activeChatTarget = null;
 
     function getBridge() {
       return window.AndroidBridge || null;
     }
 
-    function openComposeModal(targetNumber = "") {
-      document.getElementById('compose-phone').value = targetNumber;
+    function resolveContact(sender) {
+      if (!sender) return { title: "Bilinmeyen", sub: "" };
+      const isPhone = /^(\+?[0-9\s\-()]+)$/.test(sender.trim());
+      if (!isPhone) return { title: sender, sub: "" };
+
+      if (contactCache[sender] !== undefined) {
+        return {
+          title: contactCache[sender] || sender,
+          sub: contactCache[sender] ? sender : ""
+        };
+      }
+
+      const bridge = getBridge();
+      if (bridge && bridge.getContactName) {
+        try {
+          const name = bridge.getContactName(sender);
+          contactCache[sender] = name || "";
+          if (name) return { title: name, sub: sender };
+        } catch(e) {}
+      }
+      return { title: sender, sub: "" };
+    }
+
+    function switchMainTab(tabId) {
+      document.querySelectorAll('.tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.content .tab-pane').forEach(p => p.classList.remove('active'));
+
+      event.currentTarget.classList.add('active');
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+
+      if (tabId === 'messages') loadAllMessages();
+      if (tabId === 'spam') loadSpamMessages();
+    }
+
+    function switchSubTab(type) {
+      currentFilter = type;
+      document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      loadAllMessages();
+    }
+
+    function openComposeModal() {
+      document.getElementById('compose-phone').value = "";
       document.getElementById('compose-message').value = "";
       document.getElementById('compose-modal').classList.add('open');
     }
@@ -437,22 +614,187 @@
       const message = document.getElementById('compose-message').value.trim();
 
       if (!phone || !message) {
-        alert("Lütfen telefon numarası ve mesaj alanlarını doldurun.");
+        alert("Lütfen telefon numarası ve mesaj yazın.");
         return;
       }
 
       const bridge = getBridge();
       if (bridge && bridge.sendSms) {
-        const success = bridge.sendSms(phone, message);
-        if (success) {
-          alert("SMS gönderim kuyruğuna iletildi!");
-          closeComposeModal();
-        } else {
-          alert("SMS gönderilemedi. İzinleri kontrol edin.");
-        }
-      } else {
-        alert("[Tarayıcı / Mock Modu] SMS gönderildi: " + phone);
+        bridge.sendSms(phone, message);
         closeComposeModal();
+        setTimeout(loadAllMessages, 300);
+      } else {
+        alert("[Tarayıcı Modu] Gönderildi: " + phone);
+        closeComposeModal();
+      }
+    }
+
+    function openChatView(target) {
+      activeChatTarget = target;
+      const display = resolveContact(target);
+      document.getElementById('chat-title').innerText = display.title;
+      document.getElementById('chat-sub').innerText = display.sub || target;
+      document.getElementById('chat-view').classList.add('open');
+      renderChatThread();
+    }
+
+    function closeChatView() {
+      activeChatTarget = null;
+      document.getElementById('chat-view').classList.remove('open');
+      loadAllMessages();
+    }
+
+    function sendReplySms() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text || !activeChatTarget) return;
+
+      const bridge = getBridge();
+      if (bridge && bridge.sendSms) {
+        bridge.sendSms(activeChatTarget, text);
+        input.value = "";
+        setTimeout(renderChatThread, 300);
+      }
+    }
+
+    function renderChatThread() {
+      if (!activeChatTarget) return;
+      const bridge = getBridge();
+      let inbox = [];
+      let sent = [];
+
+      if (bridge && bridge.getMessages) {
+        try {
+          inbox = JSON.parse(bridge.getMessages("inbox_messages") || "[]");
+          sent = JSON.parse(bridge.getMessages("sent_messages") || "[]");
+        } catch(e) {}
+      }
+
+      // İlgili kişiyle olan mesajları filtrele ve birleştir
+      const thread = [];
+      inbox.forEach(m => {
+        if (m.sender === activeChatTarget) thread.push({ ...m, type: 'in' });
+      });
+      sent.forEach(m => {
+        if (m.recipient === activeChatTarget) thread.push({ ...m, type: 'out' });
+      });
+
+      thread.sort((a, b) => a.id - b.id);
+
+      const body = document.getElementById('chat-body');
+      if (thread.length === 0) {
+        body.innerHTML = '<div class="empty-state">Mesaj bulunmuyor.</div>';
+      } else {
+        body.innerHTML = thread.map(m => `
+          <div class="chat-bubble ${m.type}">
+            <div>${m.body}</div>
+            <div class="bubble-time">${m.date}</div>
+          </div>
+        `).join('');
+      }
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function deleteMessageItem(key, id) {
+      if (!confirm("Bu mesaj silinsin mi?")) return;
+      const bridge = getBridge();
+      if (bridge && bridge.deleteMessage) {
+        bridge.deleteMessage(key, id);
+        loadAllMessages();
+        loadSpamMessages();
+      }
+    }
+
+    function loadAllMessages() {
+      const bridge = getBridge();
+      let inbox = [];
+      let sent = [];
+
+      if (bridge && bridge.getMessages) {
+        try {
+          inbox = JSON.parse(bridge.getMessages("inbox_messages") || "[]").map(m => ({ ...m, kind: 'inbox', who: m.sender }));
+          sent = JSON.parse(bridge.getMessages("sent_messages") || "[]").map(m => ({ ...m, kind: 'sent', who: m.recipient }));
+        } catch(e) {}
+      }
+
+      let combined = [];
+      if (currentFilter === 'all') combined = [...inbox, ...sent];
+      else if (currentFilter === 'inbox') combined = inbox;
+      else if (currentFilter === 'sent') combined = sent;
+
+      combined.sort((a, b) => b.id - a.id);
+
+      const container = document.getElementById('messages-list');
+      if (combined.length === 0) {
+        container.innerHTML = '<div class="empty-state">Kayıtlı mesaj bulunmuyor.</div>';
+        return;
+      }
+
+      container.innerHTML = combined.map(m => {
+        const display = resolveContact(m.who);
+        const isSent = m.kind === 'sent';
+        const storeKey = isSent ? 'sent_messages' : 'inbox_messages';
+        return `
+          <div class="sms-item ${m.kind}" onclick="openChatView('${m.who}')">
+            <div class="sms-header">
+              <span class="sms-sender">
+                ${isSent ? '📤 Kime: ' : ''}${display.title}
+                ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
+              </span>
+              <div class="sms-meta">
+                <span class="sms-date">${m.date}</span>
+                <button class="btn-delete" title="Sil" onclick="event.stopPropagation(); deleteMessageItem('${storeKey}', ${m.id})">🗑️</button>
+              </div>
+            </div>
+            <div class="sms-body">${m.body}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function loadSpamMessages() {
+      const bridge = getBridge();
+      let spamList = [];
+      if (bridge && bridge.getMessages) {
+        try {
+          spamList = JSON.parse(bridge.getMessages("spam_messages") || "[]");
+        } catch(e) {}
+      }
+
+      const container = document.getElementById('spam-list');
+      if (spamList.length === 0) {
+        container.innerHTML = '<div class="empty-state">Karantinada engellenmiş mesaj bulunmuyor.</div>';
+        return;
+      }
+
+      container.innerHTML = spamList.slice().reverse().map(m => {
+        const display = resolveContact(m.sender);
+        return `
+          <div class="sms-item spam">
+            <div class="sms-header">
+              <span class="sms-sender">
+                ${display.title}
+                ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
+              </span>
+              <div class="sms-meta">
+                <span class="sms-date">${m.date}</span>
+                <button class="btn-delete" title="Sil" onclick="deleteMessageItem('spam_messages', ${m.id})">🗑️</button>
+              </div>
+            </div>
+            <div class="sms-body">${m.body}</div>
+            <div class="sms-reason">🚨 ${m.reason}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function clearSpam() {
+      if (confirm("Karantinadaki tüm mesajlar silinsin mi?")) {
+        const bridge = getBridge();
+        if (bridge && bridge.clearMessages) {
+          bridge.clearMessages("spam_messages");
+          loadSpamMessages();
+        }
       }
     }
 
@@ -481,7 +823,6 @@
       const input = document.getElementById(type === 'titles' ? 'input-title' : 'input-bcode');
       const val = input.value.trim().toUpperCase();
       if (!val) return;
-
       const rules = loadRules();
       if (!rules[type].includes(val)) {
         rules[type].push(val);
@@ -509,103 +850,9 @@
       });
     }
 
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-
-      event.currentTarget.classList.add('active');
-      document.getElementById(`tab-${tabId}`).classList.add('active');
-
-      loadMessages();
-    }
-
-    function deleteMessageItem(type, id) {
-      if (!confirm("Bu mesaj silinsin mi?")) return;
-
-      const key = type === 'inbox' ? 'inbox_messages' : 'spam_messages';
-      const bridge = getBridge();
-
-      if (bridge && bridge.deleteMessage) {
-        bridge.deleteMessage(key, id);
-      } else {
-        const localKey = type === 'inbox' ? 'INBOX_SMS' : 'SPAM_SMS';
-        let list = JSON.parse(localStorage.getItem(localKey) || "[]");
-        list = list.filter(m => m.id !== id);
-        localStorage.setItem(localKey, JSON.stringify(list));
-      }
-
-      loadMessages();
-    }
-
-    function loadMessages() {
-      const bridge = getBridge();
-      let inboxList = [];
-      let spamList = [];
-
-      if (bridge && bridge.getMessages) {
-        try {
-          const rawInbox = bridge.getMessages("inbox_messages");
-          const rawSpam = bridge.getMessages("spam_messages");
-          if (rawInbox) inboxList = JSON.parse(rawInbox);
-          if (rawSpam) spamList = JSON.parse(rawSpam);
-        } catch(e) {}
-      } else {
-        inboxList = JSON.parse(localStorage.getItem("INBOX_SMS") || "[]");
-        spamList = JSON.parse(localStorage.getItem("SPAM_SMS") || "[]");
-      }
-
-      const inboxContainer = document.getElementById('inbox-list');
-      if (inboxList.length === 0) {
-        inboxContainer.innerHTML = '<div class="empty-state">Henüz gelen güvenli bir mesaj yok.</div>';
-      } else {
-        inboxContainer.innerHTML = inboxList.slice().reverse().map(m => `
-          <div class="sms-item inbox" style="cursor: pointer;" onclick="openComposeModal('${m.sender}')">
-            <div class="sms-header">
-              <span class="sms-sender">${m.sender}</span>
-              <div class="sms-meta">
-                <span class="sms-date">${m.date}</span>
-                <button class="btn-delete" title="Sil" onclick="event.stopPropagation(); deleteMessageItem('inbox', ${m.id})">🗑️</button>
-              </div>
-            </div>
-            <div class="sms-body">${m.body}</div>
-          </div>
-        `).join('');
-      }
-
-      const spamContainer = document.getElementById('spam-list');
-      if (spamList.length === 0) {
-        spamContainer.innerHTML = '<div class="empty-state">Karantinada engellenmiş mesaj bulunmuyor.</div>';
-      } else {
-        spamContainer.innerHTML = spamList.slice().reverse().map(m => `
-          <div class="sms-item spam">
-            <div class="sms-header">
-              <span class="sms-sender">${m.sender}</span>
-              <div class="sms-meta">
-                <span class="sms-date">${m.date}</span>
-                <button class="btn-delete" title="Sil" onclick="deleteMessageItem('spam', ${m.id})">🗑️</button>
-              </div>
-            </div>
-            <div class="sms-body">${m.body}</div>
-            <div class="sms-reason">🚨 ${m.reason}</div>
-          </div>
-        `).join('');
-      }
-    }
-
-    function clearSpam() {
-      if (confirm("Karantinadaki tüm mesajlar silinsin mi?")) {
-        const bridge = getBridge();
-        if (bridge && bridge.clearMessages) {
-          bridge.clearMessages("spam_messages");
-        }
-        localStorage.setItem("SPAM_SMS", "[]");
-        loadMessages();
-      }
-    }
-
     window.addEventListener('DOMContentLoaded', () => {
       renderRules();
-      setTimeout(loadMessages, 500);
+      loadAllMessages();
     });
   </script>
 </body>
