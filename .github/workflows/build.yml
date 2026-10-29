@@ -34,6 +34,8 @@ jobs:
         run: |
           cp native/SmsReceiver.java android/app/src/main/java/com/erhan/apkfabrika/SmsReceiver.java
           cp native/MainActivity.java android/app/src/main/java/com/erhan/apkfabrika/
+          cp native/MmsReceiver.java android/app/src/main/java/com/erhan/apkfabrika/
+          cp native/HeadlessSmsSendService.java android/app/src/main/java/com/erhan/apkfabrika/
           cp native/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
 
       - name: 6. APK dosyasini derle
