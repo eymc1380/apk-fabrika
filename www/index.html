@@ -15,6 +15,7 @@
       --primary-hover: #0369a1;
       --danger: #ef4444;
       --success: #10b981;
+      --warning: #f59e0b;
       --bubble-in: #1e293b;
       --bubble-out: #0369a1;
     }
@@ -69,13 +70,52 @@
       gap: 4px;
     }
 
-    .badge-status {
-      background: rgba(16, 185, 129, 0.2);
-      color: var(--success);
-      padding: 4px 8px;
-      border-radius: 12px;
+    /* Arama Barı */
+    .search-box-wrapper {
+      padding: 10px 14px 4px 14px;
+      background: #0d1527;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .search-box {
+      width: 100%;
+      background: #0b0f19;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 20px;
+      box-sizing: border-box;
+      outline: none;
+      font-size: 0.85rem;
+    }
+
+    /* Çoklu Seçim Eylem Barı */
+    .selection-toolbar {
+      display: none;
+      background: #1e293b;
+      padding: 10px 16px;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--primary);
+    }
+
+    .selection-toolbar.active {
+      display: flex;
+    }
+
+    .selection-toolbar-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-action {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
       font-size: 0.75rem;
-      font-weight: bold;
+      cursor: pointer;
     }
 
     .tabs {
@@ -131,6 +171,9 @@
       margin-bottom: 10px;
       position: relative;
       cursor: pointer;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
     }
 
     .sms-item.inbox {
@@ -143,7 +186,18 @@
 
     .sms-item.spam {
       border-left: 4px solid var(--danger);
-      cursor: default;
+    }
+
+    .sms-checkbox {
+      margin-top: 4px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--primary);
+    }
+
+    .sms-content-wrap {
+      flex: 1;
     }
 
     .sms-header {
@@ -169,27 +223,12 @@
     .sms-meta {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .sms-date {
       font-size: 0.75rem;
       color: var(--text-muted);
-    }
-
-    .btn-delete {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 1.1rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      transition: color 0.2s;
-    }
-
-    .btn-delete:hover {
-      color: var(--danger);
     }
 
     .sms-body {
@@ -319,13 +358,9 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
       cursor: pointer;
       z-index: 100;
-      transition: transform 0.2s;
     }
 
-    .fab-btn:active {
-      transform: scale(0.95);
-    }
-
+    /* Tam Ekran Sohbet Penceresi */
     .chat-view {
       position: fixed;
       top: 0;
@@ -425,6 +460,7 @@
       cursor: pointer;
     }
 
+    /* Modallar */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -451,11 +487,15 @@
       border-radius: 12px;
       width: 100%;
       max-width: 420px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
       padding: 20px;
+      box-sizing: border-box;
     }
 
     .modal-card h2 {
-      margin: 0 0 16px 0;
+      margin: 0 0 14px 0;
       font-size: 1.1rem;
       display: flex;
       justify-content: space-between;
@@ -469,6 +509,18 @@
       font-size: 1.4rem;
       cursor: pointer;
     }
+
+    .contact-item {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .contact-item:hover {
+      background: #1e293b;
+    }
   </style>
 </head>
 <body>
@@ -476,10 +528,25 @@
   <div class="header">
     <div class="header-left">
       <h1>💬 Mesajlar</h1>
-      <span class="badge-status">Varsayılan</span>
     </div>
     <div class="header-actions">
       <button class="btn-sync" onclick="handleSyncDeviceSms()" title="Telefon hafızasındaki SMS'leri içe aktar">🔄 Aktar</button>
+    </div>
+  </div>
+
+  <!-- CANLI SMS ARAMA BARI -->
+  <div class="search-box-wrapper">
+    <input type="text" id="sms-search" class="search-box" placeholder="🔍 Mesajlarda, numaralarda veya kişilerde ara..." oninput="handleSearch(this.value)">
+  </div>
+
+  <!-- ÇOKLU SEÇİM EYLEM BARI -->
+  <div id="selection-bar" class="selection-toolbar">
+    <span id="selected-count" style="font-size: 0.85rem; font-weight: bold;">0 seçildi</span>
+    <div class="selection-toolbar-actions">
+      <button class="btn-action" onclick="copySelectedBodies()" title="Metinleri Kopyala">📋 Kopyala</button>
+      <button class="btn-action" onclick="toggleMoveSelected()" title="Karantinaya Taşı / Güvene Al">⇄ Taşı</button>
+      <button class="btn-action" style="color:var(--danger);" onclick="deleteSelectedMessages()" title="Seçilenleri Sil">🗑️ Sil</button>
+      <button class="btn-action" onclick="clearSelection()">İptal</button>
     </div>
   </div>
 
@@ -531,6 +598,7 @@
 
   <button class="fab-btn" onclick="openComposeModal()" title="Yeni Mesaj">✏️</button>
 
+  <!-- YENİ MESAJ MODALI -->
   <div id="compose-modal" class="modal-overlay">
     <div class="modal-card">
       <h2>
@@ -538,11 +606,14 @@
         <button class="close-btn" onclick="closeComposeModal()">&times;</button>
       </h2>
       <div style="margin-bottom: 12px;">
-        <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">Alıcı Numara</label>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <label style="font-size:0.8rem; color:var(--text-muted);">Alıcı Numara</label>
+          <button style="background:none; border:none; color:var(--primary); font-size:0.8rem; cursor:pointer; font-weight:bold;" onclick="openContactPicker()">👥 Rehberden Seç</button>
+        </div>
         <input type="tel" id="compose-phone" placeholder="Örn: 05551234567" style="width:100%;">
       </div>
       <div style="margin-bottom: 16px;">
-        <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">Mesaj</label>
+        <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">Mesaj Metni</label>
         <textarea id="compose-message" rows="4" placeholder="Mesajınızı yazın..." style="width:100%;"></textarea>
       </div>
       <div style="display:flex; justify-content:flex-end; gap:10px;">
@@ -552,6 +623,19 @@
     </div>
   </div>
 
+  <!-- REHBER KİŞİ SEÇİCİ MODALI -->
+  <div id="contact-picker-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h2>
+        <span>Rehberden Kişi Seç</span>
+        <button class="close-btn" onclick="closeContactPicker()">&times;</button>
+      </h2>
+      <input type="text" id="contact-search" placeholder="Kişilerde ara..." style="margin-bottom:12px; width:100%;" oninput="filterContacts(this.value)">
+      <div id="contact-list" style="overflow-y:auto; flex:1;"></div>
+    </div>
+  </div>
+
+  <!-- SOHBET PENCERESİ (CHAT VIEW) -->
   <div id="chat-view" class="chat-view">
     <div class="chat-header">
       <button class="chat-back-btn" onclick="closeChatView()">&larr;</button>
@@ -570,8 +654,11 @@
   <script>
     const STORAGE_KEY = "SMS_FILTER_RULES";
     const contactCache = {};
+    let allContactsList = [];
     let currentFilter = 'all';
     let activeChatTarget = null;
+    let searchQuery = '';
+    const selectedMessages = new Set(); // id listesi
 
     function getBridge() {
       return window.AndroidBridge || null;
@@ -600,14 +687,146 @@
       return { title: sender, sub: "" };
     }
 
+    /* Arama Motoru */
+    function handleSearch(val) {
+      searchQuery = val.trim().toLowerCase();
+      loadAllMessages();
+      loadSpamMessages();
+    }
+
+    /* Rehber Modal İşlemleri */
+    function openContactPicker() {
+      const bridge = getBridge();
+      if (bridge && bridge.getAllContacts) {
+        try {
+          allContactsList = JSON.parse(bridge.getAllContacts() || "[]");
+        } catch(e) {
+          allContactsList = [];
+        }
+      }
+      renderContacts(allContactsList);
+      document.getElementById('contact-picker-modal').classList.add('open');
+    }
+
+    function closeContactPicker() {
+      document.getElementById('contact-picker-modal').classList.remove('open');
+    }
+
+    function renderContacts(list) {
+      const cont = document.getElementById('contact-list');
+      if (!list || list.length === 0) {
+        cont.innerHTML = '<div class="empty-state">Rehber kaydı bulunamadı.</div>';
+        return;
+      }
+      cont.innerHTML = list.map(c => `
+        <div class="contact-item" onclick="selectContact('${c.phone}')">
+          <span style="font-weight:600;">${c.name}</span>
+          <span style="color:var(--text-muted); font-size:0.8rem;">${c.phone}</span>
+        </div>
+      `).join('');
+    }
+
+    function filterContacts(q) {
+      const query = q.toLowerCase();
+      const filtered = allContactsList.filter(c => 
+        c.name.toLowerCase().includes(query) || c.phone.includes(query)
+      );
+      renderContacts(filtered);
+    }
+
+    function selectContact(phone) {
+      document.getElementById('compose-phone').value = phone;
+      closeContactPicker();
+    }
+
+    /* Çoklu Seçim Mekanizması */
+    function toggleSelectMessage(id, event) {
+      event.stopPropagation();
+      if (selectedMessages.has(id)) {
+        selectedMessages.delete(id);
+      } else {
+        selectedMessages.add(id);
+      }
+      updateSelectionToolbar();
+    }
+
+    function updateSelectionToolbar() {
+      const bar = document.getElementById('selection-bar');
+      const countLabel = document.getElementById('selected-count');
+      if (selectedMessages.size > 0) {
+        bar.classList.add('active');
+        countLabel.innerText = `${selectedMessages.size} mesaj seçildi`;
+      } else {
+        bar.classList.remove('active');
+      }
+    }
+
+    function clearSelection() {
+      selectedMessages.clear();
+      updateSelectionToolbar();
+      loadAllMessages();
+      loadSpamMessages();
+    }
+
+    function copySelectedBodies() {
+      if (selectedMessages.size === 0) return;
+      const bridge = getBridge();
+      let allMsg = [];
+      if (bridge && bridge.getMessages) {
+        try {
+          const inb = JSON.parse(bridge.getMessages("inbox_messages") || "[]");
+          const snt = JSON.parse(bridge.getMessages("sent_messages") || "[]");
+          const spm = JSON.parse(bridge.getMessages("spam_messages") || "[]");
+          allMsg = [...inb, ...snt, ...spm];
+        } catch(e) {}
+      }
+      const texts = allMsg.filter(m => selectedMessages.has(m.id)).map(m => m.body).join('\n---\n');
+      navigator.clipboard.writeText(texts).then(() => {
+        alert("Seçilen mesaj metinleri panoya kopyalandı!");
+        clearSelection();
+      });
+    }
+
+    function deleteSelectedMessages() {
+      if (selectedMessages.size === 0) return;
+      if (!confirm(`${selectedMessages.size} adet mesaj silinsin mi?`)) return;
+
+      const ids = Array.from(selectedMessages);
+      const bridge = getBridge();
+      if (bridge && bridge.deleteMessagesBulk) {
+        bridge.deleteMessagesBulk("inbox_messages", JSON.stringify(ids));
+        bridge.deleteMessagesBulk("sent_messages", JSON.stringify(ids));
+        bridge.deleteMessagesBulk("spam_messages", JSON.stringify(ids));
+      }
+      clearSelection();
+    }
+
+    function toggleMoveSelected() {
+      if (selectedMessages.size === 0) return;
+      const bridge = getBridge();
+      if (!bridge || !bridge.moveMessage) return;
+
+      // Hangi sekmedeyiz? Eğer spam sekmesindeyse güvenliye, normaldeyse spam'a taşı
+      const activeTab = document.querySelector('.tabs .tab-btn.active').innerText;
+      const isSpamTab = activeTab.includes("Spam");
+
+      const fromKey = isSpamTab ? "spam_messages" : "inbox_messages";
+      const toKey = isSpamTab ? "inbox_messages" : "spam_messages";
+
+      selectedMessages.forEach(id => {
+        bridge.moveMessage(fromKey, toKey, id);
+      });
+
+      alert(`Seçilen mesajlar ${isSpamTab ? 'Gelen Kutusuna' : 'Karantinaya'} taşındı.`);
+      clearSelection();
+    }
+
     function handleSyncDeviceSms() {
       const bridge = getBridge();
       if (bridge && bridge.syncDeviceSms) {
         const count = bridge.syncDeviceSms();
         alert(`${count} adet eski SMS başarıyla kontrol edilip içe aktarıldı.`);
         loadAllMessages();
-      } else {
-        alert("Eski SMS aktarımı sadece gerçek Android cihazında çalışır.");
       }
     }
 
@@ -618,6 +837,7 @@
       event.currentTarget.classList.add('active');
       document.getElementById(`tab-${tabId}`).classList.add('active');
 
+      clearSelection();
       if (tabId === 'messages') loadAllMessages();
       if (tabId === 'spam') loadSpamMessages();
     }
@@ -653,13 +873,11 @@
         bridge.sendSms(phone, message);
         closeComposeModal();
         setTimeout(loadAllMessages, 300);
-      } else {
-        alert("[Tarayıcı Modu] Gönderildi: " + phone);
-        closeComposeModal();
       }
     }
 
     function openChatView(target) {
+      if (selectedMessages.size > 0) return; // Seçim modundayken sohbet açılmaz
       activeChatTarget = target;
       const display = resolveContact(target);
       document.getElementById('chat-title').innerText = display.title;
@@ -724,16 +942,6 @@
       body.scrollTop = body.scrollHeight;
     }
 
-    function deleteMessageItem(key, id) {
-      if (!confirm("Bu mesaj silinsin mi?")) return;
-      const bridge = getBridge();
-      if (bridge && bridge.deleteMessage) {
-        bridge.deleteMessage(key, id);
-        loadAllMessages();
-        loadSpamMessages();
-      }
-    }
-
     function loadAllMessages() {
       const bridge = getBridge();
       let inbox = [];
@@ -751,31 +959,41 @@
       else if (currentFilter === 'inbox') combined = inbox;
       else if (currentFilter === 'sent') combined = sent;
 
+      // Canlı Arama Filtresi
+      if (searchQuery) {
+        combined = combined.filter(m => {
+          const disp = resolveContact(m.who);
+          return m.body.toLowerCase().includes(searchQuery) ||
+                 m.who.toLowerCase().includes(searchQuery) ||
+                 disp.title.toLowerCase().includes(searchQuery);
+        });
+      }
+
       combined.sort((a, b) => b.id - a.id);
 
       const container = document.getElementById('messages-list');
       if (combined.length === 0) {
-        container.innerHTML = '<div class="empty-state">Kayıtlı mesaj bulunmuyor.</div>';
+        container.innerHTML = '<div class="empty-state">Eşleşen mesaj bulunamadı.</div>';
         return;
       }
 
       container.innerHTML = combined.map(m => {
         const display = resolveContact(m.who);
         const isSent = m.kind === 'sent';
-        const storeKey = isSent ? 'sent_messages' : 'inbox_messages';
+        const isChecked = selectedMessages.has(m.id) ? 'checked' : '';
         return `
           <div class="sms-item ${m.kind}" onclick="openChatView('${m.who}')">
-            <div class="sms-header">
-              <span class="sms-sender">
-                ${isSent ? '📤 Kime: ' : ''}${display.title}
-                ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
-              </span>
-              <div class="sms-meta">
+            <input type="checkbox" class="sms-checkbox" ${isChecked} onclick="toggleSelectMessage(${m.id}, event)">
+            <div class="sms-content-wrap">
+              <div class="sms-header">
+                <span class="sms-sender">
+                  ${isSent ? '📤 Kime: ' : ''}${display.title}
+                  ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
+                </span>
                 <span class="sms-date">${m.date}</span>
-                <button class="btn-delete" title="Sil" onclick="event.stopPropagation(); deleteMessageItem('${storeKey}', ${m.id})">🗑️</button>
               </div>
+              <div class="sms-body">${m.body}</div>
             </div>
-            <div class="sms-body">${m.body}</div>
           </div>
         `;
       }).join('');
@@ -790,28 +1008,38 @@
         } catch(e) {}
       }
 
+      if (searchQuery) {
+        spamList = spamList.filter(m => {
+          const disp = resolveContact(m.sender);
+          return m.body.toLowerCase().includes(searchQuery) ||
+                 m.sender.toLowerCase().includes(searchQuery) ||
+                 disp.title.toLowerCase().includes(searchQuery);
+        });
+      }
+
       const container = document.getElementById('spam-list');
       if (spamList.length === 0) {
-        container.innerHTML = '<div class="empty-state">Karantinada engellenmiş mesaj bulunmuyor.</div>';
+        container.innerHTML = '<div class="empty-state">Karantinada eşleşen mesaj bulunmuyor.</div>';
         return;
       }
 
       container.innerHTML = spamList.slice().reverse().map(m => {
         const display = resolveContact(m.sender);
+        const isChecked = selectedMessages.has(m.id) ? 'checked' : '';
         return `
           <div class="sms-item spam">
-            <div class="sms-header">
-              <span class="sms-sender">
-                ${display.title}
-                ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
-              </span>
-              <div class="sms-meta">
+            <input type="checkbox" class="sms-checkbox" ${isChecked} onclick="toggleSelectMessage(${m.id}, event)">
+            <div class="sms-content-wrap">
+              <div class="sms-header">
+                <span class="sms-sender">
+                  ${display.title}
+                  ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
+                </span>
                 <span class="sms-date">${m.date}</span>
-                <button class="btn-delete" title="Sil" onclick="deleteMessageItem('spam_messages', ${m.id})">🗑️</button>
               </div>
+              <div class="sms-body">${m.body}</div>
+              <div class="sms-reason">🚨 ${m.reason}</div>
             </div>
-            <div class="sms-body">${m.body}</div>
-            <div class="sms-reason">🚨 ${m.reason}</div>
           </div>
         `;
       }).join('');
