@@ -29,7 +29,10 @@ jobs:
           npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap add android
 
-          # Native dosyaları kopyala
+          # Web varlıklarını senkronize et
+          npx cap sync android
+
+          # Native Java ve Manifest dosyalarını kopyala
           cp -r native/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           cp -r native/*.java android/app/src/main/java/com/erhan/apkfabrika/
           
@@ -39,7 +42,7 @@ jobs:
           [ -f native/launch_screen.xml ] && cp native/launch_screen.xml android/app/src/main/res/drawable/launch_screen.xml || true
           [ -f native/ic_launcher_foreground.xml ] && cp native/ic_launcher_foreground.xml android/app/src/main/res/drawable/ic_launcher_foreground.xml || true
 
-          # Masaüstü İkonunu Doğrudan Kalkan Vektörüne Zorla (Android 8+)
+          # Masaüstü İkonunu Kalkan Vektörüne Zorla (Android 8+)
           mkdir -p android/app/src/main/res/mipmap-anydpi-v26
           cat << 'EOF' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           <?xml version="1.0" encoding="utf-8"?>
@@ -49,8 +52,6 @@ jobs:
           </adaptive-icon>
           EOF
           cp android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
-
-          npx cap copy android
 
       - name: 5. Sabit Keystore Oluştur ve Gradle'a Tanımla
         run: |
