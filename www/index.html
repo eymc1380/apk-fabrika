@@ -15,171 +15,228 @@
       --danger: #ef4444;
       --success: #10b981;
     }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
       padding: 0;
       background-color: var(--bg);
       color: var(--text);
-      -webkit-user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       user-select: none;
+      -webkit-user-select: none;
     }
+
     .header {
+      background-color: #0d1527;
       padding: 16px;
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--border);
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
     }
+
     .header h1 {
-      font-size: 17px;
       margin: 0;
-      font-weight: 700;
-      color: #38bdf8;
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
+
+    .badge-status {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+
     .tabs {
       display: flex;
-      background: var(--card-bg);
+      background: #111827;
       border-bottom: 1px solid var(--border);
     }
+
     .tab-btn {
       flex: 1;
-      padding: 12px 6px;
+      padding: 12px 0;
+      background: none;
       border: none;
-      background: transparent;
       color: var(--text-muted);
-      font-size: 13px;
+      font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
       border-bottom: 2px solid transparent;
       transition: all 0.2s;
     }
+
     .tab-btn.active {
-      color: #38bdf8;
-      border-bottom-color: #38bdf8;
-      background: rgba(56, 189, 248, 0.05);
+      color: var(--primary);
+      border-bottom-color: var(--primary);
     }
+
     .content {
       padding: 16px;
-      max-width: 600px;
-      margin: 0 auto;
     }
+
     .tab-pane {
       display: none;
     }
+
     .tab-pane.active {
       display: block;
     }
+
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 8px;
       padding: 14px;
       margin-bottom: 12px;
-    }
-    label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: var(--text-muted);
-    }
-    input[type="text"] {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 10px 12px;
-      background: #0d131f;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: #fff;
-      font-size: 13px;
-      margin-bottom: 10px;
-      outline: none;
-    }
-    input[type="text"]:focus {
-      border-color: var(--primary);
-    }
-    .btn {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-    
-    .tag-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 8px;
-    }
-    .tag {
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      color: #38bdf8;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .tag .remove-btn {
-      cursor: pointer;
-      font-weight: bold;
-      color: #f87171;
     }
 
     .sms-item {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
+      border-radius: 8px;
+      padding: 12px 14px;
       margin-bottom: 10px;
+      position: relative;
     }
-    .sms-item.spam {
-      border-left: 4px solid var(--danger);
-    }
+
     .sms-item.inbox {
       border-left: 4px solid var(--success);
     }
+
+    .sms-item.spam {
+      border-left: 4px solid var(--danger);
+    }
+
     .sms-header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       margin-bottom: 6px;
-      font-size: 13px;
+    }
+
+    .sms-sender {
       font-weight: bold;
+      font-size: 0.95rem;
+      color: #fff;
     }
+
+    .sms-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .sms-date {
-      font-size: 11px;
+      font-size: 0.75rem;
       color: var(--text-muted);
-      font-weight: normal;
     }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.2s;
+    }
+
+    .btn-delete:hover {
+      color: var(--danger);
+    }
+
     .sms-body {
-      font-size: 13px;
-      color: #cbd5e1;
+      font-size: 0.88rem;
+      color: #d1d5db;
       line-height: 1.4;
       word-break: break-word;
     }
+
     .sms-reason {
-      font-size: 11px;
-      color: #f87171;
-      margin-top: 6px;
-      display: inline-block;
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--danger);
       background: rgba(239, 68, 68, 0.1);
-      padding: 2px 6px;
+      padding: 4px 8px;
       border-radius: 4px;
+      display: inline-block;
     }
+
     .empty-state {
       text-align: center;
       color: var(--text-muted);
-      font-size: 13px;
       padding: 40px 10px;
+      font-size: 0.9rem;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 10px;
+      border-radius: 6px;
+      outline: none;
+      font-size: 0.9rem;
+    }
+
+    button.btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button.btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid var(--danger);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .tag {
+      background: #1e293b;
+      border: 1px solid var(--border);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tag .remove-btn {
+      color: var(--danger);
+      cursor: pointer;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -187,7 +244,7 @@
 
   <div class="header">
     <h1>🛡️ SMS Filtreleme</h1>
-    <span style="font-size: 11px; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 8px; border-radius: 12px;">Aktif</span>
+    <span class="badge-status">Aktif</span>
   </div>
 
   <div class="tabs">
@@ -197,36 +254,38 @@
   </div>
 
   <div class="content">
-    <!-- 1. SEKME: GELENLER -->
+    <!-- GELENLER SEKMESİ -->
     <div id="tab-inbox" class="tab-pane active">
       <div id="inbox-list"></div>
     </div>
 
-    <!-- 2. SEKME: KURALLAR -->
+    <!-- KURALLAR SEKMESİ -->
     <div id="tab-rules" class="tab-pane">
       <div class="card">
-        <label>Engellenecek Başlık / İsim (Örn: BAHIS, KREDI)</label>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="input-title" placeholder="Kelime veya başlık girin">
-          <button class="btn btn-primary" style="width: 80px;" onclick="addRule('titles')">Ekle</button>
+        <h3>Başlık Engelleme</h3>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Gönderici adı bu kelimelerden biriyle eşleşirse karantinaya alınır.</p>
+        <div class="input-group">
+          <input type="text" id="input-title" placeholder="Örn: BAHIS, KUMAR">
+          <button class="btn-primary" onclick="addRule('titles')">Ekle</button>
         </div>
         <div id="tags-titles" class="tag-container"></div>
       </div>
 
       <div class="card">
-        <label>Engellenecek Operatör Kodu (Örn: B214, B002)</label>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="input-bcode" placeholder="Örn: B214">
-          <button class="btn btn-primary" style="width: 80px;" onclick="addRule('bcodes')">Ekle</button>
+        <h3>B-Kodu Engelleme (BTK)</h3>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Mesaj sonundaki yetkili operatör kodu eşleşirse engellenir.</p>
+        <div class="input-group">
+          <input type="text" id="input-bcode" placeholder="Örn: B214, B002">
+          <button class="btn-primary" onclick="addRule('bcodes')">Ekle</button>
         </div>
         <div id="tags-bcodes" class="tag-container"></div>
       </div>
     </div>
 
-    <!-- 3. SEKME: SPAM / KARANTİNA -->
+    <!-- SPAM / KARANTİNA SEKMESİ -->
     <div id="tab-spam" class="tab-pane">
       <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-        <button class="btn btn-danger" style="width: auto; padding: 6px 12px;" onclick="clearSpam()">Karantinayı Temizle</button>
+        <button class="btn-danger" onclick="clearSpam()">Tüm Karantinayı Temizle</button>
       </div>
       <div id="spam-list"></div>
     </div>
@@ -302,6 +361,24 @@
       loadMessages();
     }
 
+    function deleteMessageItem(type, id) {
+      if (!confirm("Bu mesaj silinsin mi?")) return;
+
+      const key = type === 'inbox' ? 'inbox_messages' : 'spam_messages';
+      const bridge = getBridge();
+
+      if (bridge && bridge.deleteMessage) {
+        bridge.deleteMessage(key, id);
+      } else {
+        const localKey = type === 'inbox' ? 'INBOX_SMS' : 'SPAM_SMS';
+        let list = JSON.parse(localStorage.getItem(localKey) || "[]");
+        list = list.filter(m => m.id !== id);
+        localStorage.setItem(localKey, JSON.stringify(list));
+      }
+
+      loadMessages();
+    }
+
     function loadMessages() {
       const bridge = getBridge();
       let inboxList = [];
@@ -326,8 +403,11 @@
         inboxContainer.innerHTML = inboxList.slice().reverse().map(m => `
           <div class="sms-item inbox">
             <div class="sms-header">
-              <span>${m.sender}</span>
-              <span class="sms-date">${m.date}</span>
+              <span class="sms-sender">${m.sender}</span>
+              <div class="sms-meta">
+                <span class="sms-date">${m.date}</span>
+                <button class="btn-delete" title="Sil" onclick="deleteMessageItem('inbox', ${m.id})">🗑️</button>
+              </div>
             </div>
             <div class="sms-body">${m.body}</div>
           </div>
@@ -341,8 +421,11 @@
         spamContainer.innerHTML = spamList.slice().reverse().map(m => `
           <div class="sms-item spam">
             <div class="sms-header">
-              <span>${m.sender}</span>
-              <span class="sms-date">${m.date}</span>
+              <span class="sms-sender">${m.sender}</span>
+              <div class="sms-meta">
+                <span class="sms-date">${m.date}</span>
+                <button class="btn-delete" title="Sil" onclick="deleteMessageItem('spam', ${m.id})">🗑️</button>
+              </div>
             </div>
             <div class="sms-body">${m.body}</div>
             <div class="sms-reason">🚨 ${m.reason}</div>
@@ -352,7 +435,7 @@
     }
 
     function clearSpam() {
-      if (confirm("Karantinadaki mesajlar silinsin mi?")) {
+      if (confirm("Karantinadaki tüm mesajlar silinsin mi?")) {
         const bridge = getBridge();
         if (bridge && bridge.clearMessages) {
           bridge.clearMessages("spam_messages");
@@ -362,7 +445,6 @@
       }
     }
 
-    // İlk açılış: Köprünün oturması için yarım saniye gecikmeli yükle
     window.addEventListener('DOMContentLoaded', () => {
       renderRules();
       setTimeout(loadMessages, 500);
