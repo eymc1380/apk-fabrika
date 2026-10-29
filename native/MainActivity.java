@@ -1,12 +1,19 @@
 package com.erhan.apkfabrika;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.telephony.SmsManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -65,11 +72,54 @@ public class MainActivity extends BridgeActivity {
                 try {
                     SmsManager smsManager = SmsManager.getDefault();
                     smsManager.sendTextMessage(phoneNumber, null, message, null, null);
+
+                    // Giden mesaji yerel kayda ekle
+                    SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                    String sentData = prefs.getString("sent_messages", "[]");
+                    JSONArray sentArray = new JSONArray(sentData);
+
+                    JSONObject sentObj = new JSONObject();
+                    sentObj.put("id", System.currentTimeMillis());
+                    sentObj.put("recipient", phoneNumber);
+                    sentObj.put("body", message);
+                    
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
+                    sentObj.put("date", sdf.format(new Date()));
+
+                    sentArray.put(sentObj);
+                    prefs.edit().putString("sent_messages", sentArray.toString()).apply();
+
                     return true;
                 } catch (Exception e) {
                     e.printStackTrace();
                     return false;
                 }
+            }
+
+            @JavascriptInterface
+            public String getContactName(String phoneNumber) {
+                if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+                    return "";
+                }
+                try {
+                    ContentResolver cr = getContentResolver();
+                    Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber));
+                    Cursor cursor = cr.query(uri, new String[]{ContactsContract.PhoneLookup.DISPLAY_NAME}, null, null, null);
+                    if (cursor != null) {
+                        if (cursor.moveToFirst()) {
+                            int nameIndex = cursor.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME);
+                            if (nameIndex != -1) {
+                                String name = cursor.getString(nameIndex);
+                                cursor.close();
+                                return name != null ? name : "";
+                            }
+                        }
+                        cursor.close();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return "";
             }
 
         }, "AndroidBridge");
