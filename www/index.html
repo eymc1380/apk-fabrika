@@ -18,6 +18,8 @@
       --warning: #f59e0b;
       --bubble-in: #1e293b;
       --bubble-out: #0369a1;
+      --sim1: #3b82f6;
+      --sim2: #ec4899;
     }
 
     body {
@@ -70,7 +72,6 @@
       gap: 4px;
     }
 
-    /* Arama Barı */
     .search-box-wrapper {
       padding: 10px 14px 4px 14px;
       background: #0d1527;
@@ -89,7 +90,6 @@
       font-size: 0.85rem;
     }
 
-    /* Çoklu Seçim Eylem Barı */
     .selection-toolbar {
       display: none;
       background: #1e293b;
@@ -163,6 +163,47 @@
       margin-bottom: 12px;
     }
 
+    .filters-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .sub-tab-btn {
+      padding: 5px 12px;
+      border-radius: 16px;
+      background: #1e293b;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .sub-tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .sub-tab-btn.sim1.active {
+      background: var(--sim1);
+      border-color: var(--sim1);
+    }
+
+    .sub-tab-btn.sim2.active {
+      background: var(--sim2);
+      border-color: var(--sim2);
+    }
+
     .sms-item {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -211,19 +252,36 @@
       font-weight: bold;
       font-size: 0.95rem;
       color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
     .sms-sender .sender-sub {
       font-size: 0.75rem;
       color: var(--text-muted);
       font-weight: normal;
-      margin-left: 6px;
     }
 
-    .sms-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .sim-badge {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .sim-badge.sim-1 {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    .sim-badge.sim-2 {
+      background: rgba(236, 72, 153, 0.2);
+      color: #f472b6;
+      border: 1px solid rgba(236, 72, 153, 0.4);
     }
 
     .sms-date {
@@ -255,35 +313,13 @@
       font-size: 0.9rem;
     }
 
-    .sub-tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .sub-tab-btn {
-      padding: 6px 14px;
-      border-radius: 20px;
-      background: #1e293b;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-
-    .sub-tab-btn.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-    }
-
     .input-group {
       display: flex;
       gap: 8px;
       margin-bottom: 14px;
     }
 
-    input[type="text"], input[type="tel"], textarea {
+    input[type="text"], input[type="tel"], textarea, select {
       flex: 1;
       background: #0f172a;
       border: 1px solid var(--border);
@@ -360,7 +396,6 @@
       z-index: 100;
     }
 
-    /* Tam Ekran Sohbet Penceresi */
     .chat-view {
       position: fixed;
       top: 0;
@@ -460,7 +495,6 @@
       cursor: pointer;
     }
 
-    /* Modallar */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -534,12 +568,10 @@
     </div>
   </div>
 
-  <!-- CANLI SMS ARAMA BARI -->
   <div class="search-box-wrapper">
     <input type="text" id="sms-search" class="search-box" placeholder="🔍 Mesajlarda, numaralarda veya kişilerde ara..." oninput="handleSearch(this.value)">
   </div>
 
-  <!-- ÇOKLU SEÇİM EYLEM BARI -->
   <div id="selection-bar" class="selection-toolbar">
     <span id="selected-count" style="font-size: 0.85rem; font-weight: bold;">0 seçildi</span>
     <div class="selection-toolbar-actions">
@@ -558,10 +590,19 @@
 
   <div class="content">
     <div id="tab-messages" class="tab-pane active">
-      <div class="sub-tabs">
-        <button class="sub-tab-btn active" onclick="switchSubTab('all')">Tümü</button>
-        <button class="sub-tab-btn" onclick="switchSubTab('inbox')">Gelenler</button>
-        <button class="sub-tab-btn" onclick="switchSubTab('sent')">Gidenler</button>
+      <div class="filters-row">
+        <!-- Tür Filtresi (Gelen / Giden / Tümü) -->
+        <div class="filter-group">
+          <button class="sub-tab-btn active" onclick="switchSubTab('all')">Tüm Mesajlar</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('inbox')">Gelenler</button>
+          <button class="sub-tab-btn" onclick="switchSubTab('sent')">Gidenler</button>
+        </div>
+        <!-- SIM Kart Filtresi (Tüm SIM'ler / SIM 1 / SIM 2) -->
+        <div class="filter-group" id="sim-filter-group">
+          <button class="sub-tab-btn active" onclick="switchSimFilter('all')">Tüm Hatlar</button>
+          <button class="sub-tab-btn sim1" onclick="switchSimFilter('SIM 1')">SIM 1</button>
+          <button class="sub-tab-btn sim2" onclick="switchSimFilter('SIM 2')">SIM 2</button>
+        </div>
       </div>
       <div id="messages-list"></div>
     </div>
@@ -598,13 +639,17 @@
 
   <button class="fab-btn" onclick="openComposeModal()" title="Yeni Mesaj">✏️</button>
 
-  <!-- YENİ MESAJ MODALI -->
+  <!-- YENİ MESAJ MODALI (SIM SEÇİMLİ) -->
   <div id="compose-modal" class="modal-overlay">
     <div class="modal-card">
       <h2>
         <span>Yeni SMS Gönder</span>
         <button class="close-btn" onclick="closeComposeModal()">&times;</button>
       </h2>
+      <div style="margin-bottom: 12px;">
+        <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">Gönderilecek SIM Kart</label>
+        <select id="compose-sim-select"></select>
+      </div>
       <div style="margin-bottom: 12px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
           <label style="font-size:0.8rem; color:var(--text-muted);">Alıcı Numara</label>
@@ -623,7 +668,6 @@
     </div>
   </div>
 
-  <!-- REHBER KİŞİ SEÇİCİ MODALI -->
   <div id="contact-picker-modal" class="modal-overlay">
     <div class="modal-card">
       <h2>
@@ -635,7 +679,6 @@
     </div>
   </div>
 
-  <!-- SOHBET PENCERESİ (CHAT VIEW) -->
   <div id="chat-view" class="chat-view">
     <div class="chat-header">
       <button class="chat-back-btn" onclick="closeChatView()">&larr;</button>
@@ -656,12 +699,33 @@
     const contactCache = {};
     let allContactsList = [];
     let currentFilter = 'all';
+    let currentSimFilter = 'all';
     let activeChatTarget = null;
     let searchQuery = '';
-    const selectedMessages = new Set(); // id listesi
+    const selectedMessages = new Set();
+    let detectedSims = [];
 
     function getBridge() {
       return window.AndroidBridge || null;
+    }
+
+    function initSims() {
+      const bridge = getBridge();
+      if (bridge && bridge.getActiveSimSlots) {
+        try {
+          detectedSims = JSON.parse(bridge.getActiveSimSlots() || "[]");
+        } catch(e) {
+          detectedSims = [];
+        }
+      }
+      const select = document.getElementById('compose-sim-select');
+      if (detectedSims.length > 0) {
+        select.innerHTML = detectedSims.map(s => `
+          <option value="${s.subId}">SIM ${s.slotIndex} (${s.carrier})</option>
+        `).join('');
+      } else {
+        select.innerHTML = '<option value="0">Varsayılan SIM Kart</option>';
+      }
     }
 
     function resolveContact(sender) {
@@ -687,14 +751,12 @@
       return { title: sender, sub: "" };
     }
 
-    /* Arama Motoru */
     function handleSearch(val) {
       searchQuery = val.trim().toLowerCase();
       loadAllMessages();
       loadSpamMessages();
     }
 
-    /* Rehber Modal İşlemleri */
     function openContactPicker() {
       const bridge = getBridge();
       if (bridge && bridge.getAllContacts) {
@@ -739,7 +801,6 @@
       closeContactPicker();
     }
 
-    /* Çoklu Seçim Mekanizması */
     function toggleSelectMessage(id, event) {
       event.stopPropagation();
       if (selectedMessages.has(id)) {
@@ -806,7 +867,6 @@
       const bridge = getBridge();
       if (!bridge || !bridge.moveMessage) return;
 
-      // Hangi sekmedeyiz? Eğer spam sekmesindeyse güvenliye, normaldeyse spam'a taşı
       const activeTab = document.querySelector('.tabs .tab-btn.active').innerText;
       const isSpamTab = activeTab.includes("Spam");
 
@@ -825,7 +885,7 @@
       const bridge = getBridge();
       if (bridge && bridge.syncDeviceSms) {
         const count = bridge.syncDeviceSms();
-        alert(`${count} adet eski SMS başarıyla kontrol edilip içe aktarıldı.`);
+        alert(`${count} adet eski SMS kontrol edilip içe aktarıldı.`);
         loadAllMessages();
       }
     }
@@ -844,12 +904,22 @@
 
     function switchSubTab(type) {
       currentFilter = type;
-      document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+      const parent = event.currentTarget.parentElement;
+      parent.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      loadAllMessages();
+    }
+
+    function switchSimFilter(sim) {
+      currentSimFilter = sim;
+      const parent = event.currentTarget.parentElement;
+      parent.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
       event.currentTarget.classList.add('active');
       loadAllMessages();
     }
 
     function openComposeModal() {
+      initSims();
       document.getElementById('compose-phone').value = "";
       document.getElementById('compose-message').value = "";
       document.getElementById('compose-modal').classList.add('open');
@@ -862,6 +932,7 @@
     function handleSendSms() {
       const phone = document.getElementById('compose-phone').value.trim();
       const message = document.getElementById('compose-message').value.trim();
+      const subId = parseInt(document.getElementById('compose-sim-select').value, 10) || 0;
 
       if (!phone || !message) {
         alert("Lütfen telefon numarası ve mesaj yazın.");
@@ -870,14 +941,14 @@
 
       const bridge = getBridge();
       if (bridge && bridge.sendSms) {
-        bridge.sendSms(phone, message);
+        bridge.sendSms(phone, message, subId);
         closeComposeModal();
         setTimeout(loadAllMessages, 300);
       }
     }
 
     function openChatView(target) {
-      if (selectedMessages.size > 0) return; // Seçim modundayken sohbet açılmaz
+      if (selectedMessages.size > 0) return;
       activeChatTarget = target;
       const display = resolveContact(target);
       document.getElementById('chat-title').innerText = display.title;
@@ -899,7 +970,7 @@
 
       const bridge = getBridge();
       if (bridge && bridge.sendSms) {
-        bridge.sendSms(activeChatTarget, text);
+        bridge.sendSms(activeChatTarget, text, 0);
         input.value = "";
         setTimeout(renderChatThread, 300);
       }
@@ -935,7 +1006,7 @@
         body.innerHTML = thread.map(m => `
           <div class="chat-bubble ${m.type}">
             <div>${m.body}</div>
-            <div class="bubble-time">${m.date}</div>
+            <div class="bubble-time">${m.simSlot ? `[${m.simSlot}] ` : ''}${m.date}</div>
           </div>
         `).join('');
       }
@@ -959,6 +1030,11 @@
       else if (currentFilter === 'inbox') combined = inbox;
       else if (currentFilter === 'sent') combined = sent;
 
+      // Çift SIM Filtresi
+      if (currentSimFilter !== 'all') {
+        combined = combined.filter(m => (m.simSlot || 'SIM 1') === currentSimFilter);
+      }
+
       // Canlı Arama Filtresi
       if (searchQuery) {
         combined = combined.filter(m => {
@@ -981,6 +1057,9 @@
         const display = resolveContact(m.who);
         const isSent = m.kind === 'sent';
         const isChecked = selectedMessages.has(m.id) ? 'checked' : '';
+        const simTag = m.simSlot || 'SIM 1';
+        const simBadgeClass = simTag === 'SIM 2' ? 'sim-2' : 'sim-1';
+
         return `
           <div class="sms-item ${m.kind}" onclick="openChatView('${m.who}')">
             <input type="checkbox" class="sms-checkbox" ${isChecked} onclick="toggleSelectMessage(${m.id}, event)">
@@ -989,6 +1068,7 @@
                 <span class="sms-sender">
                   ${isSent ? '📤 Kime: ' : ''}${display.title}
                   ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
+                  <span class="sim-badge ${simBadgeClass}">${simTag}</span>
                 </span>
                 <span class="sms-date">${m.date}</span>
               </div>
@@ -1026,6 +1106,9 @@
       container.innerHTML = spamList.slice().reverse().map(m => {
         const display = resolveContact(m.sender);
         const isChecked = selectedMessages.has(m.id) ? 'checked' : '';
+        const simTag = m.simSlot || 'SIM 1';
+        const simBadgeClass = simTag === 'SIM 2' ? 'sim-2' : 'sim-1';
+
         return `
           <div class="sms-item spam">
             <input type="checkbox" class="sms-checkbox" ${isChecked} onclick="toggleSelectMessage(${m.id}, event)">
@@ -1034,6 +1117,7 @@
                 <span class="sms-sender">
                   ${display.title}
                   ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
+                  <span class="sim-badge ${simBadgeClass}">${simTag}</span>
                 </span>
                 <span class="sms-date">${m.date}</span>
               </div>
@@ -1109,6 +1193,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       renderRules();
+      initSims();
       loadAllMessages();
     });
   </script>
