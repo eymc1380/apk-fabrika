@@ -8,52 +8,61 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-
     steps:
-      - name: 1. Repo kodlarini cek
+      - name: 1. Depoyu Klonla
         uses: actions/checkout@v4
 
-      - name: 2. Node.js kur
+      - name: 2. Node.js 20 Kur
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
-      - name: 3. Java JDK 21 kur
+      - name: 3. Java JDK 17 Kur
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '21'
+          distribution: 'zulu'
+          java-version: '17'
 
-      - name: 4. Capacitor hazirla ve Android projesini olustur
+      - name: 4. Capacitor Projesini Hazırla
         run: |
-          npm install
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap add android
-          npx cap sync
 
-      - name: 5. Ozel SMS dosyalarini Android projesine monte et
-        run: |
-          cp native/SmsReceiver.java android/app/src/main/java/com/erhan/apkfabrika/SmsReceiver.java
-          cp native/MainActivity.java android/app/src/main/java/com/erhan/apkfabrika/
-          cp native/MmsReceiver.java android/app/src/main/java/com/erhan/apkfabrika/
-          cp native/HeadlessSmsSendService.java android/app/src/main/java/com/erhan/apkfabrika/
-          cp native/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          # Sürüm kodunu GitHub run_number ile otomatik artır (üzerine güncelleme için)
+          sed -i 's/versionCode 1/versionCode ${{ github.run_number }}/g' android/app/build.gradle
+
+          # Native dosyaları yerine kopyala
+          cp -r native/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          cp -r native/*.java android/app/src/main/java/com/erhan/apkfabrika/
           
-          # Simge ve Acilis Ekrani Kaynaklari
-          mkdir -p android/app/src/main/res/values
-          mkdir -p android/app/src/main/res/drawable
-          cp native/colors.xml android/app/src/main/res/values/colors.xml
-          cp native/styles.xml android/app/src/main/res/values/styles.xml
-          cp native/ic_launcher_foreground.xml android/app/src/main/res/drawable/ic_launcher_foreground.xml
-          cp native/launch_screen.xml android/app/src/main/res/drawable/launch_screen.xml
+          # Renk ve ikon dosyaları varsa kopyala
+          [ -f native/colors.xml ] && cp native/colors.xml android/app/src/main/res/values/colors.xml || true
+          [ -f native/styles.xml ] && cp native/styles.xml android/app/src/main/res/values/styles.xml || true
+          [ -f native/launch_screen.xml ] && cp native/launch_screen.xml android/app/src/main/res/drawable/launch_screen.xml || true
+          [ -f native/ic_launcher_foreground.xml ] && cp native/ic_launcher_foreground.xml android/app/src/main/res/drawable/ic_launcher_foreground.xml || true
 
-      - name: 6. APK dosyasini derle
+          npx cap copy android
+
+      - name: 5. Sabit Keystore (İmza Anahtarı) Oluştur
+        run: |
+          # Sabit bir imza anahtarı oluştur (Her derlemede aynı imza kullanılacak)
+          keytool -genkey -v -keystore release.keystore -alias smsapp -keyalg RSA -keysize 2048 -validity 10000 -storepass erhan123 -keypass erhan123 -dname "CN=Erhan, OU=SMS, O=Fabrika, L=Bitlis, C=TR"
+
+      - name: 6. APK Dosyasını Derle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
 
-      - name: 7. Uretilen APK dosyasini yukle
+      - name: 7. APK'yı Sabit Anahtarla İmzala ve Hizala
+        run: |
+          # Üretilen Release APK'yı sabit anahtarla imzala
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore release.keystore -storepass erhan123 -keypass erhan123 android/app/build/outputs/apk/release/app-release-unsigned.apk smsapp
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk sms-fabrika-signed.apk
+
+      - name: 8. İmzalı APK'yı Yükle (Artifact)
         uses: actions/upload-artifact@v4
         with:
-          name: APK-SMS-Engelleyici
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: sms-fabrika-signed
+          path: sms-fabrika-signed.apk
