@@ -12,6 +12,7 @@
       --text: #f3f4f6;
       --text-muted: #9ca3af;
       --primary: #0284c7;
+      --primary-hover: #0369a1;
       --danger: #ef4444;
       --success: #10b981;
     }
@@ -79,6 +80,7 @@
 
     .content {
       padding: 16px;
+      padding-bottom: 80px;
     }
 
     .tab-pane {
@@ -183,7 +185,7 @@
       margin-bottom: 14px;
     }
 
-    input[type="text"] {
+    input[type="text"], input[type="tel"], textarea {
       flex: 1;
       background: #0f172a;
       border: 1px solid var(--border);
@@ -192,6 +194,8 @@
       border-radius: 6px;
       outline: none;
       font-size: 0.9rem;
+      box-sizing: border-box;
+      font-family: inherit;
     }
 
     button.btn-primary {
@@ -238,13 +242,108 @@
       cursor: pointer;
       font-weight: bold;
     }
+
+    /* FAB Buton */
+    .fab-btn {
+      position: fixed;
+      right: 20px;
+      bottom: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      color: #ffffff;
+      border: none;
+      font-size: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      z-index: 100;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .fab-btn:active {
+      transform: scale(0.95);
+      background-color: var(--primary-hover);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(3px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-card h2 {
+      margin: 0 0 16px 0;
+      font-size: 1.1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-card .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-group input, .form-group textarea {
+      width: 100%;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+    }
   </style>
 </head>
 <body>
 
   <div class="header">
     <h1>🛡️ SMS Filtreleme</h1>
-    <span class="badge-status">Aktif</span>
+    <span class="badge-status">Varsayılan SMS</span>
   </div>
 
   <div class="tabs">
@@ -291,11 +390,70 @@
     </div>
   </div>
 
+  <!-- YENİ MESAJ YAZ FAB BUTONU -->
+  <button class="fab-btn" onclick="openComposeModal()" title="Yeni Mesaj Yaz">✏️</button>
+
+  <!-- YENİ MESAJ MODALI -->
+  <div id="compose-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h2>
+        <span>Yeni SMS Gönder</span>
+        <button class="close-btn" onclick="closeComposeModal()">&times;</button>
+      </h2>
+      <div class="form-group">
+        <label for="compose-phone">Alıcı Telefon Numarası</label>
+        <input type="tel" id="compose-phone" placeholder="Örn: 05551234567">
+      </div>
+      <div class="form-group">
+        <label for="compose-message">Mesaj Metni</label>
+        <textarea id="compose-message" rows="4" placeholder="Mesajınızı yazın..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" style="background:transparent; border:1px solid var(--border);" onclick="closeComposeModal()">İptal</button>
+        <button class="btn-primary" onclick="handleSendSms()">Gönder 🚀</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const STORAGE_KEY = "SMS_FILTER_RULES";
 
     function getBridge() {
       return window.AndroidBridge || null;
+    }
+
+    function openComposeModal(targetNumber = "") {
+      document.getElementById('compose-phone').value = targetNumber;
+      document.getElementById('compose-message').value = "";
+      document.getElementById('compose-modal').classList.add('open');
+    }
+
+    function closeComposeModal() {
+      document.getElementById('compose-modal').classList.remove('open');
+    }
+
+    function handleSendSms() {
+      const phone = document.getElementById('compose-phone').value.trim();
+      const message = document.getElementById('compose-message').value.trim();
+
+      if (!phone || !message) {
+        alert("Lütfen telefon numarası ve mesaj alanlarını doldurun.");
+        return;
+      }
+
+      const bridge = getBridge();
+      if (bridge && bridge.sendSms) {
+        const success = bridge.sendSms(phone, message);
+        if (success) {
+          alert("SMS gönderim kuyruğuna iletildi!");
+          closeComposeModal();
+        } else {
+          alert("SMS gönderilemedi. İzinleri kontrol edin.");
+        }
+      } else {
+        alert("[Tarayıcı / Mock Modu] SMS gönderildi: " + phone);
+        closeComposeModal();
+      }
     }
 
     function loadRules() {
@@ -401,12 +559,12 @@
         inboxContainer.innerHTML = '<div class="empty-state">Henüz gelen güvenli bir mesaj yok.</div>';
       } else {
         inboxContainer.innerHTML = inboxList.slice().reverse().map(m => `
-          <div class="sms-item inbox">
+          <div class="sms-item inbox" style="cursor: pointer;" onclick="openComposeModal('${m.sender}')">
             <div class="sms-header">
               <span class="sms-sender">${m.sender}</span>
               <div class="sms-meta">
                 <span class="sms-date">${m.date}</span>
-                <button class="btn-delete" title="Sil" onclick="deleteMessageItem('inbox', ${m.id})">🗑️</button>
+                <button class="btn-delete" title="Sil" onclick="event.stopPropagation(); deleteMessageItem('inbox', ${m.id})">🗑️</button>
               </div>
             </div>
             <div class="sms-body">${m.body}</div>
