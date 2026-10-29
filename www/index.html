@@ -31,20 +31,42 @@
 
     .header {
       background-color: #0d1527;
-      padding: 14px 16px;
+      padding: 12px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border);
     }
 
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .header h1 {
       margin: 0;
       font-size: 1.05rem;
       font-weight: 600;
+    }
+
+    .header-actions {
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    .btn-sync {
+      background: #1e293b;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .badge-status {
@@ -304,7 +326,6 @@
       transform: scale(0.95);
     }
 
-    /* Tam Ekran Sohbet Penceresi (Chat Thread View) */
     .chat-view {
       position: fixed;
       top: 0;
@@ -404,7 +425,6 @@
       cursor: pointer;
     }
 
-    /* Modal */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -454,8 +474,13 @@
 <body>
 
   <div class="header">
-    <h1>💬 Mesajlar</h1>
-    <span class="badge-status">Varsayılan SMS</span>
+    <div class="header-left">
+      <h1>💬 Mesajlar</h1>
+      <span class="badge-status">Varsayılan</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-sync" onclick="handleSyncDeviceSms()" title="Telefon hafızasındaki SMS'leri içe aktar">🔄 Aktar</button>
+    </div>
   </div>
 
   <div class="tabs">
@@ -465,7 +490,6 @@
   </div>
 
   <div class="content">
-    <!-- MESAJLAR SEKMESİ (Gelenler ve Gidenler) -->
     <div id="tab-messages" class="tab-pane active">
       <div class="sub-tabs">
         <button class="sub-tab-btn active" onclick="switchSubTab('all')">Tümü</button>
@@ -475,7 +499,6 @@
       <div id="messages-list"></div>
     </div>
 
-    <!-- KURALLAR SEKMESİ -->
     <div id="tab-rules" class="tab-pane">
       <div class="card">
         <h3>Başlık Engelleme</h3>
@@ -498,7 +521,6 @@
       </div>
     </div>
 
-    <!-- SPAM / KARANTİNA SEKMESİ -->
     <div id="tab-spam" class="tab-pane">
       <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
         <button class="btn-danger" onclick="clearSpam()">Tüm Karantinayı Temizle</button>
@@ -507,10 +529,8 @@
     </div>
   </div>
 
-  <!-- YENİ MESAJ FAB BUTONU -->
   <button class="fab-btn" onclick="openComposeModal()" title="Yeni Mesaj">✏️</button>
 
-  <!-- YENİ MESAJ MODALI -->
   <div id="compose-modal" class="modal-overlay">
     <div class="modal-card">
       <h2>
@@ -532,7 +552,6 @@
     </div>
   </div>
 
-  <!-- SOHBET PENCERESİ (CHAT VIEW) -->
   <div id="chat-view" class="chat-view">
     <div class="chat-header">
       <button class="chat-back-btn" onclick="closeChatView()">&larr;</button>
@@ -579,6 +598,17 @@
         } catch(e) {}
       }
       return { title: sender, sub: "" };
+    }
+
+    function handleSyncDeviceSms() {
+      const bridge = getBridge();
+      if (bridge && bridge.syncDeviceSms) {
+        const count = bridge.syncDeviceSms();
+        alert(`${count} adet eski SMS başarıyla kontrol edilip içe aktarıldı.`);
+        loadAllMessages();
+      } else {
+        alert("Eski SMS aktarımı sadece gerçek Android cihazında çalışır.");
+      }
     }
 
     function switchMainTab(tabId) {
@@ -670,7 +700,6 @@
         } catch(e) {}
       }
 
-      // İlgili kişiyle olan mesajları filtrele ve birleştir
       const thread = [];
       inbox.forEach(m => {
         if (m.sender === activeChatTarget) thread.push({ ...m, type: 'in' });
