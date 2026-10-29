@@ -296,10 +296,10 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
 
-      event.target.classList.add('active');
+      event.currentTarget.classList.add('active');
       document.getElementById(`tab-${tabId}`).classList.add('active');
 
-      if (tabId === 'inbox' || tabId === 'spam') loadMessages();
+      loadMessages();
     }
 
     function loadMessages() {
@@ -309,8 +309,10 @@
 
       if (bridge && bridge.getMessages) {
         try {
-          inboxList = JSON.parse(bridge.getMessages("inbox_messages"));
-          spamList = JSON.parse(bridge.getMessages("spam_messages"));
+          const rawInbox = bridge.getMessages("inbox_messages");
+          const rawSpam = bridge.getMessages("spam_messages");
+          if (rawInbox) inboxList = JSON.parse(rawInbox);
+          if (rawSpam) spamList = JSON.parse(rawSpam);
         } catch(e) {}
       } else {
         inboxList = JSON.parse(localStorage.getItem("INBOX_SMS") || "[]");
@@ -360,10 +362,11 @@
       }
     }
 
-    // Başlangıç senkronizasyonu
-    const currentRules = loadRules();
-    saveRules(currentRules);
-    loadMessages();
+    // İlk açılış: Köprünün oturması için yarım saniye gecikmeli yükle
+    window.addEventListener('DOMContentLoaded', () => {
+      renderRules();
+      setTimeout(loadMessages, 500);
+    });
   </script>
 </body>
 </html>
