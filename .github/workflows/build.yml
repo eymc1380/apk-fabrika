@@ -37,6 +37,14 @@ jobs:
           cp native/MmsReceiver.java android/app/src/main/java/com/erhan/apkfabrika/
           cp native/HeadlessSmsSendService.java android/app/src/main/java/com/erhan/apkfabrika/
           cp native/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          
+          # Simge ve Acilis Ekrani Kaynaklari
+          mkdir -p android/app/src/main/res/values
+          mkdir -p android/app/src/main/res/drawable
+          cp native/colors.xml android/app/src/main/res/values/colors.xml
+          cp native/styles.xml android/app/src/main/res/values/styles.xml
+          cp native/ic_launcher_foreground.xml android/app/src/main/res/drawable/ic_launcher_foreground.xml
+          cp native/launch_screen.xml android/app/src/main/res/drawable/launch_screen.xml
 
       - name: 6. APK dosyasini derle
         run: |
