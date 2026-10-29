@@ -3,6 +3,7 @@ package com.erhan.apkfabrika;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.telephony.SmsManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
@@ -55,6 +56,18 @@ public class MainActivity extends BridgeActivity {
                     prefs.edit().putString(key, newArray.toString()).apply();
                     return true;
                 } catch (Exception e) {
+                    return false;
+                }
+            }
+
+            @JavascriptInterface
+            public boolean sendSms(String phoneNumber, String message) {
+                try {
+                    SmsManager smsManager = SmsManager.getDefault();
+                    smsManager.sendTextMessage(phoneNumber, null, message, null, null);
+                    return true;
+                } catch (Exception e) {
+                    e.printStackTrace();
                     return false;
                 }
             }
