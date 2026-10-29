@@ -19,8 +19,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONArray;
@@ -34,8 +36,6 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Uygulama acildiginda kalici disk dosyasindan SharedPreferences'a geri yukle
         restoreFromPersistentFile();
 
         WebView webView = this.getBridge().getWebView();
@@ -48,16 +48,9 @@ public class MainActivity extends BridgeActivity {
             }
 
             @JavascriptInterface
-            public void saveRules(String rulesJson) {
+            public void saveStoreData(String key, String value) {
                 SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-                prefs.edit().putString("rules", rulesJson).apply();
-                saveToPersistentFile(); // Diske aninda kalici yedek al
-            }
-
-            @JavascriptInterface
-            public void clearMessages(String key) {
-                SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-                prefs.edit().putString(key, "[]").apply();
+                prefs.edit().putString(key, value).apply();
                 saveToPersistentFile();
             }
 
@@ -76,6 +69,11 @@ public class MainActivity extends BridgeActivity {
                         }
                     }
 
+                    // Silinen ID'yi kara listeye ekle
+                    addToDeletedBlacklist(messageId);
+                    // Sistem SMS veritabanindan da temizlemeyi dene
+                    deleteSystemSms(messageId);
+
                     prefs.edit().putString(key, newArray.toString()).apply();
                     saveToPersistentFile();
                     return true;
@@ -93,17 +91,16 @@ public class MainActivity extends BridgeActivity {
                     JSONArray idsArray = new JSONArray(idsJson);
                     JSONArray newArray = new JSONArray();
 
+                    Set<Long> toDelete = new HashSet<>();
+                    for (int j = 0; j < idsArray.length(); j++) {
+                        toDelete.add(idsArray.getLong(j));
+                        addToDeletedBlacklist(idsArray.getLong(j));
+                        deleteSystemSms(idsArray.getLong(j));
+                    }
+
                     for (int i = 0; i < array.length(); i++) {
                         JSONObject obj = array.getJSONObject(i);
-                        long curId = obj.optLong("id");
-                        boolean match = false;
-                        for (int j = 0; j < idsArray.length(); j++) {
-                            if (idsArray.getLong(j) == curId) {
-                                match = true;
-                                break;
-                            }
-                        }
-                        if (!match) {
+                        if (!toDelete.contains(obj.optLong("id"))) {
                             newArray.put(obj);
                         }
                     }
@@ -165,8 +162,6 @@ public class MainActivity extends BridgeActivity {
                             simArray.put(simObj);
                         }
                     }
-                } catch (SecurityException se) {
-                    se.printStackTrace();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -192,7 +187,7 @@ public class MainActivity extends BridgeActivity {
                     sentObj.put("id", System.currentTimeMillis());
                     sentObj.put("recipient", phoneNumber);
                     sentObj.put("body", message);
-                    sentObj.put("simSlot", subId > 0 ? ("SIM") : "SIM 1");
+                    sentObj.put("simSlot", subId > 0 ? ("SIM " + subId) : "SIM 1");
                     
                     SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
                     sentObj.put("date", sdf.format(new Date()));
@@ -200,19 +195,15 @@ public class MainActivity extends BridgeActivity {
                     sentArray.put(sentObj);
                     prefs.edit().putString("sent_messages", sentArray.toString()).apply();
                     saveToPersistentFile();
-
                     return true;
                 } catch (Exception e) {
-                    e.printStackTrace();
                     return false;
                 }
             }
 
             @JavascriptInterface
             public String getContactName(String phoneNumber) {
-                if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
-                    return "";
-                }
+                if (phoneNumber == null || phoneNumber.trim().isEmpty()) return "";
                 try {
                     ContentResolver cr = getContentResolver();
                     Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber));
@@ -228,9 +219,7 @@ public class MainActivity extends BridgeActivity {
                         }
                         cursor.close();
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                } catch (Exception e) {}
                 return "";
             }
 
@@ -241,14 +230,9 @@ public class MainActivity extends BridgeActivity {
                     ContentResolver cr = getContentResolver();
                     Cursor cursor = cr.query(
                         ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                        new String[]{
-                            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                            ContactsContract.CommonDataKinds.Phone.NUMBER
-                        },
-                        null, null,
-                        ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
+                        new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER},
+                        null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
                     );
-
                     if (cursor != null) {
                         while (cursor.moveToNext()) {
                             int nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
@@ -266,9 +250,7 @@ public class MainActivity extends BridgeActivity {
                         }
                         cursor.close();
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                } catch (Exception e) {}
                 return contacts.toString();
             }
 
@@ -281,6 +263,9 @@ public class MainActivity extends BridgeActivity {
                     JSONObject rulesObj = new JSONObject(rulesJson);
                     JSONArray blockedTitles = rulesObj.optJSONArray("titles");
                     JSONArray blockedBcodes = rulesObj.optJSONArray("bcodes");
+
+                    // Silinmis ID'leri al
+                    Set<Long> deletedSet = getDeletedBlacklist();
 
                     JSONArray inboxArray = new JSONArray(prefs.getString("inbox_messages", "[]"));
                     JSONArray sentArray = new JSONArray(prefs.getString("sent_messages", "[]"));
@@ -299,18 +284,24 @@ public class MainActivity extends BridgeActivity {
                         SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
 
                         do {
+                            long timestamp = cursor.getLong(dateIdx);
+
+                            // KULLANICI BU MESAJI DAHA ONCE SILDIYSE KESINLIKLE ATLA
+                            if (deletedSet.contains(timestamp)) {
+                                continue;
+                            }
+
+                            // Zaten yerel listede varsa atla
+                            if (isAlreadyExists(inboxArray, timestamp) || isAlreadyExists(sentArray, timestamp) || isAlreadyExists(spamArray, timestamp)) {
+                                continue;
+                            }
+
                             String address = cursor.getString(addressIdx);
                             String body = cursor.getString(bodyIdx);
-                            long timestamp = cursor.getLong(dateIdx);
                             int type = cursor.getInt(typeIdx);
                             int subId = subIdIdx != -1 ? cursor.getInt(subIdIdx) : 1;
 
                             if (address == null || body == null) continue;
-
-                            // Tekrar eklenmesini onlemek icin id kontrolu
-                            if (isAlreadyExists(inboxArray, timestamp) || isAlreadyExists(sentArray, timestamp) || isAlreadyExists(spamArray, timestamp)) {
-                                continue;
-                            }
 
                             String simTag = "SIM " + (subId <= 1 ? "1" : "2");
                             String formattedDate = sdf.format(new Date(timestamp));
@@ -332,7 +323,7 @@ public class MainActivity extends BridgeActivity {
                                     for (int i = 0; i < blockedTitles.length(); i++) {
                                         if (address.toUpperCase().contains(blockedTitles.getString(i))) {
                                             isSpam = true;
-                                            reason = "Baslik eslesmesi: " + blockedTitles.getString(i);
+                                            reason = "Baslik: " + blockedTitles.getString(i);
                                             break;
                                         }
                                     }
@@ -346,7 +337,7 @@ public class MainActivity extends BridgeActivity {
                                         for (int i = 0; i < blockedBcodes.length(); i++) {
                                             if (foundCode.equals(blockedBcodes.getString(i))) {
                                                 isSpam = true;
-                                                reason = "Engelli B-Kodu: " + foundCode;
+                                                reason = "B-Kodu: " + foundCode;
                                                 break;
                                             }
                                         }
@@ -381,7 +372,6 @@ public class MainActivity extends BridgeActivity {
                         .apply();
 
                     saveToPersistentFile();
-
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -391,24 +381,47 @@ public class MainActivity extends BridgeActivity {
         }, "AndroidBridge");
     }
 
+    private void deleteSystemSms(long timestamp) {
+        try {
+            getContentResolver().delete(Uri.parse("content://sms"), "date=?", new String[]{String.valueOf(timestamp)});
+        } catch (Exception e) {}
+    }
+
+    private void addToDeletedBlacklist(long id) {
+        SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        String current = prefs.getString("deleted_ids", "[]");
+        try {
+            JSONArray arr = new JSONArray(current);
+            arr.put(id);
+            prefs.edit().putString("deleted_ids", arr.toString()).apply();
+        } catch(Exception e) {}
+    }
+
+    private Set<Long> getDeletedBlacklist() {
+        Set<Long> set = new HashSet<>();
+        SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        try {
+            JSONArray arr = new JSONArray(prefs.getString("deleted_ids", "[]"));
+            for (int i = 0; i < arr.length(); i++) {
+                set.add(arr.getLong(i));
+            }
+        } catch(Exception e) {}
+        return set;
+    }
+
     private boolean isAlreadyExists(JSONArray array, long id) {
         for (int i = 0; i < array.length(); i++) {
             JSONObject obj = array.optJSONObject(i);
-            if (obj != null && obj.optLong("id") == id) {
-                return true;
-            }
+            if (obj != null && obj.optLong("id") == id) return true;
         }
         return false;
     }
 
-    // Telefonun kalıcı ortak klasörüne (Documents/SmsFilterBackup) JSON dosyası yazar
     private synchronized void saveToPersistentFile() {
         try {
             File docsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
             File backupDir = new File(docsDir, BACKUP_DIR_NAME);
-            if (!backupDir.exists()) {
-                backupDir.mkdirs();
-            }
+            if (!backupDir.exists()) backupDir.mkdirs();
 
             File file = new File(backupDir, BACKUP_FILE_NAME);
             SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
@@ -418,17 +431,16 @@ public class MainActivity extends BridgeActivity {
             root.put("inbox_messages", prefs.getString("inbox_messages", "[]"));
             root.put("sent_messages", prefs.getString("sent_messages", "[]"));
             root.put("spam_messages", prefs.getString("spam_messages", "[]"));
+            root.put("deleted_ids", prefs.getString("deleted_ids", "[]"));
+            root.put("categories", prefs.getString("categories", "[]")); // Dinamik Sekmeler
 
             FileOutputStream fos = new FileOutputStream(file);
             fos.write(root.toString().getBytes("UTF-8"));
             fos.flush();
             fos.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) {}
     }
 
-    // Kurulum sonrası uygulama ilk açıldığında Documents/SmsFilterBackup/backup_data.json varsa geri yükler
     private synchronized void restoreFromPersistentFile() {
         try {
             File docsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
@@ -442,27 +454,17 @@ public class MainActivity extends BridgeActivity {
             fis.read(data);
             fis.close();
 
-            String jsonStr = new String(data, "UTF-8");
-            JSONObject root = new JSONObject(jsonStr);
-
+            JSONObject root = new JSONObject(new String(data, "UTF-8"));
             SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = prefs.edit();
 
-            if (root.has("rules") && !root.getString("rules").isEmpty()) {
-                editor.putString("rules", root.getString("rules"));
-            }
-            if (root.has("inbox_messages")) {
-                editor.putString("inbox_messages", root.getString("inbox_messages"));
-            }
-            if (root.has("sent_messages")) {
-                editor.putString("sent_messages", root.getString("sent_messages"));
-            }
-            if (root.has("spam_messages")) {
-                editor.putString("spam_messages", root.getString("spam_messages"));
-            }
+            if (root.has("rules")) editor.putString("rules", root.getString("rules"));
+            if (root.has("inbox_messages")) editor.putString("inbox_messages", root.getString("inbox_messages"));
+            if (root.has("sent_messages")) editor.putString("sent_messages", root.getString("sent_messages"));
+            if (root.has("spam_messages")) editor.putString("spam_messages", root.getString("spam_messages"));
+            if (root.has("deleted_ids")) editor.putString("deleted_ids", root.getString("deleted_ids"));
+            if (root.has("categories")) editor.putString("categories", root.getString("categories"));
             editor.apply();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) {}
     }
 }
