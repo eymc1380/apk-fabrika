@@ -67,9 +67,6 @@
       border-radius: 6px;
       font-size: 0.75rem;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
     }
 
     .search-box-wrapper {
@@ -118,15 +115,17 @@
       cursor: pointer;
     }
 
-    .tabs {
+    /* ÜST KATEGORİ SEKMELERİ (DİNAMİK) */
+    .tabs-wrapper {
       display: flex;
       background: #111827;
       border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
     }
 
     .tab-btn {
-      flex: 1;
-      padding: 12px 0;
+      padding: 12px 16px;
       background: none;
       border: none;
       color: var(--text-muted);
@@ -134,7 +133,7 @@
       font-weight: 600;
       cursor: pointer;
       border-bottom: 2px solid transparent;
-      transition: all 0.2s;
+      white-space: nowrap;
     }
 
     .tab-btn.active {
@@ -210,7 +209,6 @@
       border-radius: 8px;
       padding: 12px 14px;
       margin-bottom: 10px;
-      position: relative;
       cursor: pointer;
       display: flex;
       gap: 12px;
@@ -262,6 +260,16 @@
       font-size: 0.75rem;
       color: var(--text-muted);
       font-weight: normal;
+    }
+
+    .category-badge {
+      font-size: 0.65rem;
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: bold;
     }
 
     .sim-badge {
@@ -564,7 +572,7 @@
       <h1>💬 Mesajlar</h1>
     </div>
     <div class="header-actions">
-      <button class="btn-sync" onclick="handleSyncDeviceSms()" title="Telefon hafızasındaki SMS'leri içe aktar">🔄 Aktar</button>
+      <button class="btn-sync" onclick="handleSyncDeviceSms()" title="Telefon hafızasındaki yeni SMS'leri senkronize et">🔄 Senkronize</button>
     </div>
   </div>
 
@@ -572,9 +580,11 @@
     <input type="text" id="sms-search" class="search-box" placeholder="🔍 Mesajlarda, numaralarda veya kişilerde ara..." oninput="handleSearch(this.value)">
   </div>
 
+  <!-- ÇOKLU SEÇİM EYLEM BARI (KATEGORİ ATAMA EKLENDİ) -->
   <div id="selection-bar" class="selection-toolbar">
     <span id="selected-count" style="font-size: 0.85rem; font-weight: bold;">0 seçildi</span>
     <div class="selection-toolbar-actions">
+      <button class="btn-action" onclick="openAssignCategoryModal()" title="Kategoriye Ata">📁 Sekmeye Ata</button>
       <button class="btn-action" onclick="copySelectedBodies()" title="Metinleri Kopyala">📋 Kopyala</button>
       <button class="btn-action" onclick="toggleMoveSelected()" title="Karantinaya Taşı / Güvene Al">⇄ Taşı</button>
       <button class="btn-action" style="color:var(--danger);" onclick="deleteSelectedMessages()" title="Seçilenleri Sil">🗑️ Sil</button>
@@ -582,22 +592,17 @@
     </div>
   </div>
 
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchMainTab('messages')">Mesajlar</button>
-    <button class="tab-btn" onclick="switchMainTab('rules')">Kurallar</button>
-    <button class="tab-btn" onclick="switchMainTab('spam')">Spam / Karantina</button>
-  </div>
+  <!-- DİNAMİK ÜST SEKMELER -->
+  <div class="tabs-wrapper" id="main-tabs-bar"></div>
 
   <div class="content">
     <div id="tab-messages" class="tab-pane active">
       <div class="filters-row">
-        <!-- Tür Filtresi (Gelen / Giden / Tümü) -->
         <div class="filter-group">
-          <button class="sub-tab-btn active" onclick="switchSubTab('all')">Tüm Mesajlar</button>
+          <button class="sub-tab-btn active" onclick="switchSubTab('all')">Tüm Akış</button>
           <button class="sub-tab-btn" onclick="switchSubTab('inbox')">Gelenler</button>
           <button class="sub-tab-btn" onclick="switchSubTab('sent')">Gidenler</button>
         </div>
-        <!-- SIM Kart Filtresi (Tüm SIM'ler / SIM 1 / SIM 2) -->
         <div class="filter-group" id="sim-filter-group">
           <button class="sub-tab-btn active" onclick="switchSimFilter('all')">Tüm Hatlar</button>
           <button class="sub-tab-btn sim1" onclick="switchSimFilter('SIM 1')">SIM 1</button>
@@ -607,9 +612,20 @@
       <div id="messages-list"></div>
     </div>
 
+    <!-- KURALLAR SEKMESİ (KATEGORİ YÖNETİMİ DAHİL) -->
     <div id="tab-rules" class="tab-pane">
       <div class="card">
-        <h3>Başlık Engelleme</h3>
+        <h3>Özel Sekmeler (Kategoriler)</h3>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Örn: BANKA, AİLE, İŞ. Sekmeyi açıp gelen mesajları bu sekmeye bağlayabilirsiniz.</p>
+        <div class="input-group">
+          <input type="text" id="input-new-category" placeholder="Yeni Sekme Adı (Örn: BANKA)">
+          <button class="btn-primary" onclick="createCategory()">Sekme Oluştur</button>
+        </div>
+        <div id="tags-categories" class="tag-container"></div>
+      </div>
+
+      <div class="card">
+        <h3>Başlık Engelleme (Karantina)</h3>
         <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Gönderici adı bu kelimelerden biriyle eşleşirse karantinaya alınır.</p>
         <div class="input-group">
           <input type="text" id="input-title" placeholder="Örn: BAHIS, KUMAR">
@@ -629,6 +645,7 @@
       </div>
     </div>
 
+    <!-- SPAM / KARANTİNA SEKMESİ -->
     <div id="tab-spam" class="tab-pane">
       <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
         <button class="btn-danger" onclick="clearSpam()">Tüm Karantinayı Temizle</button>
@@ -639,7 +656,7 @@
 
   <button class="fab-btn" onclick="openComposeModal()" title="Yeni Mesaj">✏️</button>
 
-  <!-- YENİ MESAJ MODALI (SIM SEÇİMLİ) -->
+  <!-- YENİ MESAJ MODALI -->
   <div id="compose-modal" class="modal-overlay">
     <div class="modal-card">
       <h2>
@@ -668,6 +685,7 @@
     </div>
   </div>
 
+  <!-- REHBER MODALI -->
   <div id="contact-picker-modal" class="modal-overlay">
     <div class="modal-card">
       <h2>
@@ -679,6 +697,19 @@
     </div>
   </div>
 
+  <!-- KATEGORİYE / SEKMEYE ATA MODALI -->
+  <div id="assign-category-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h2>
+        <span>Sekmeye Sabitle</span>
+        <button class="close-btn" onclick="closeAssignCategoryModal()">&times;</button>
+      </h2>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Seçilen göndericiler bu sekmeye bağlanacak ve sonraki tüm mesajları doğrudan bu sekmede listelenecektir.</p>
+      <div id="assign-category-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+  </div>
+
+  <!-- SOHBET PENCERESİ -->
   <div id="chat-view" class="chat-view">
     <div class="chat-header">
       <button class="chat-back-btn" onclick="closeChatView()">&larr;</button>
@@ -700,13 +731,171 @@
     let allContactsList = [];
     let currentFilter = 'all';
     let currentSimFilter = 'all';
+    let currentMainTab = 'all'; // all, rules, spam, veya kategori adı (Örn: BANKA)
     let activeChatTarget = null;
     let searchQuery = '';
     const selectedMessages = new Set();
     let detectedSims = [];
 
+    // Dinamik Kategoriler: [{ name: 'BANKA', senders: ['VAKIFBANK', 'GARANTI', '0850...'] }]
+    let categories = [];
+
     function getBridge() {
       return window.AndroidBridge || null;
+    }
+
+    function initCategories() {
+      const bridge = getBridge();
+      if (bridge && bridge.getMessages) {
+        try {
+          const raw = bridge.getMessages("categories");
+          categories = JSON.parse(raw || "[]");
+        } catch(e) {
+          categories = [];
+        }
+      } else {
+        categories = JSON.parse(localStorage.getItem("CATEGORIES") || "[]");
+      }
+      renderTabsBar();
+      renderCategoryTags();
+    }
+
+    function saveCategories() {
+      const json = JSON.stringify(categories);
+      localStorage.setItem("CATEGORIES", json);
+      const bridge = getBridge();
+      if (bridge && bridge.saveStoreData) {
+        bridge.saveStoreData("categories", json);
+      }
+      renderTabsBar();
+      renderCategoryTags();
+    }
+
+    function createCategory() {
+      const input = document.getElementById('input-new-category');
+      const name = input.value.trim().toUpperCase();
+      if (!name) return;
+
+      if (!categories.find(c => c.name === name)) {
+        categories.push({ name: name, senders: [] });
+        saveCategories();
+      }
+      input.value = "";
+    }
+
+    function deleteCategory(name) {
+      if (!confirm(`'${name}' sekmesi kaldırılsın mı?`)) return;
+      categories = categories.filter(c => c.name !== name);
+      saveCategories();
+      if (currentMainTab === name) currentMainTab = 'all';
+      renderTabsBar();
+      loadAllMessages();
+    }
+
+    function renderCategoryTags() {
+      const container = document.getElementById('tags-categories');
+      container.innerHTML = categories.map(c => `
+        <div class="tag">
+          <span>📁 ${c.name} (${c.senders.length} gönderici)</span>
+          <span class="remove-btn" onclick="deleteCategory('${c.name}')">&times;</span>
+        </div>
+      `).join('');
+    }
+
+    function renderTabsBar() {
+      const bar = document.getElementById('main-tabs-bar');
+      let html = `
+        <button class="tab-btn ${currentMainTab === 'all' ? 'active' : ''}" onclick="switchCategoryTab('all')">Mesajlar</button>
+      `;
+
+      categories.forEach(c => {
+        html += `<button class="tab-btn ${currentMainTab === c.name ? 'active' : ''}" onclick="switchCategoryTab('${c.name}')">📁 ${c.name}</button>`;
+      });
+
+      html += `
+        <button class="tab-btn ${currentMainTab === 'rules' ? 'active' : ''}" onclick="switchCategoryTab('rules')">Kurallar</button>
+        <button class="tab-btn ${currentMainTab === 'spam' ? 'active' : ''}" onclick="switchCategoryTab('spam')">Spam / Karantina</button>
+      `;
+      bar.innerHTML = html;
+    }
+
+    function switchCategoryTab(tabName) {
+      currentMainTab = tabName;
+      renderTabsBar();
+      clearSelection();
+
+      document.querySelectorAll('.content .tab-pane').forEach(p => p.classList.remove('active'));
+
+      if (tabName === 'rules') {
+        document.getElementById('tab-rules').classList.add('active');
+      } else if (tabName === 'spam') {
+        document.getElementById('tab-spam').classList.add('active');
+        loadSpamMessages();
+      } else {
+        document.getElementById('tab-messages').classList.add('active');
+        loadAllMessages();
+      }
+    }
+
+    function getSenderCategory(sender) {
+      if (!sender) return null;
+      const upper = sender.toUpperCase();
+      for (let c of categories) {
+        if (c.senders.some(s => s.toUpperCase() === upper)) {
+          return c.name;
+        }
+      }
+      return null;
+    }
+
+    function openAssignCategoryModal() {
+      if (selectedMessages.size === 0) return;
+      if (categories.length === 0) {
+        alert("Önce Kurallar sekmesinden en az bir sekme (kategori) oluşturmalısınız.");
+        return;
+      }
+      const listDiv = document.getElementById('assign-category-list');
+      listDiv.innerHTML = categories.map(c => `
+        <button class="btn-primary" style="text-align:left; padding:12px; background:#1e293b;" onclick="assignSelectedToCategory('${c.name}')">
+          📁 ${c.name}
+        </button>
+      `).join('');
+      document.getElementById('assign-category-modal').classList.add('open');
+    }
+
+    function closeAssignCategoryModal() {
+      document.getElementById('assign-category-modal').classList.remove('open');
+    }
+
+    function assignSelectedToCategory(catName) {
+      const bridge = getBridge();
+      let allMsg = [];
+      if (bridge && bridge.getMessages) {
+        try {
+          const inb = JSON.parse(bridge.getMessages("inbox_messages") || "[]");
+          const snt = JSON.parse(bridge.getMessages("sent_messages") || "[]");
+          allMsg = [...inb, ...snt];
+        } catch(e) {}
+      }
+
+      const targetCategory = categories.find(c => c.name === catName);
+      if (!targetCategory) return;
+
+      selectedMessages.forEach(id => {
+        const found = allMsg.find(m => m.id === id);
+        if (found) {
+          const who = (found.sender || found.recipient || "").toUpperCase();
+          if (who && !targetCategory.senders.includes(who)) {
+            targetCategory.senders.push(who);
+          }
+        }
+      });
+
+      saveCategories();
+      closeAssignCategoryModal();
+      clearSelection();
+      alert(`Seçilen göndericiler '${catName}' sekmesine sabitlendi!`);
+      loadAllMessages();
     }
 
     function initSims() {
@@ -843,14 +1032,14 @@
       }
       const texts = allMsg.filter(m => selectedMessages.has(m.id)).map(m => m.body).join('\n---\n');
       navigator.clipboard.writeText(texts).then(() => {
-        alert("Seçilen mesaj metinleri panoya kopyalandı!");
+        alert("Seçilen mesajlar kopyalandı!");
         clearSelection();
       });
     }
 
     function deleteSelectedMessages() {
       if (selectedMessages.size === 0) return;
-      if (!confirm(`${selectedMessages.size} adet mesaj silinsin mi?`)) return;
+      if (!confirm(`${selectedMessages.size} adet mesaj kalıcı olarak silinsin mi? (Bir daha geri gelmeyecek)`)) return;
 
       const ids = Array.from(selectedMessages);
       const bridge = getBridge();
@@ -867,9 +1056,7 @@
       const bridge = getBridge();
       if (!bridge || !bridge.moveMessage) return;
 
-      const activeTab = document.querySelector('.tabs .tab-btn.active').innerText;
-      const isSpamTab = activeTab.includes("Spam");
-
+      const isSpamTab = currentMainTab === 'spam';
       const fromKey = isSpamTab ? "spam_messages" : "inbox_messages";
       const toKey = isSpamTab ? "inbox_messages" : "spam_messages";
 
@@ -877,7 +1064,7 @@
         bridge.moveMessage(fromKey, toKey, id);
       });
 
-      alert(`Seçilen mesajlar ${isSpamTab ? 'Gelen Kutusuna' : 'Karantinaya'} taşındı.`);
+      alert(`Mesajlar ${isSpamTab ? 'Gelen Kutusuna' : 'Karantinaya'} taşındı.`);
       clearSelection();
     }
 
@@ -885,21 +1072,9 @@
       const bridge = getBridge();
       if (bridge && bridge.syncDeviceSms) {
         const count = bridge.syncDeviceSms();
-        alert(`${count} adet eski SMS kontrol edilip içe aktarıldı.`);
+        alert(`${count} adet yeni SMS senkronize edildi.`);
         loadAllMessages();
       }
-    }
-
-    function switchMainTab(tabId) {
-      document.querySelectorAll('.tabs .tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.content .tab-pane').forEach(p => p.classList.remove('active'));
-
-      event.currentTarget.classList.add('active');
-      document.getElementById(`tab-${tabId}`).classList.add('active');
-
-      clearSelection();
-      if (tabId === 'messages') loadAllMessages();
-      if (tabId === 'spam') loadSpamMessages();
     }
 
     function switchSubTab(type) {
@@ -1030,12 +1205,21 @@
       else if (currentFilter === 'inbox') combined = inbox;
       else if (currentFilter === 'sent') combined = sent;
 
-      // Çift SIM Filtresi
+      // Özel Dinamik Kategori Sekmesi Seçiliyse (Örn: BANKA)
+      if (currentMainTab !== 'all' && currentMainTab !== 'rules' && currentMainTab !== 'spam') {
+        const cat = categories.find(c => c.name === currentMainTab);
+        if (cat) {
+          const setSenders = new Set(cat.senders.map(s => s.toUpperCase()));
+          combined = combined.filter(m => setSenders.has((m.who || '').toUpperCase()));
+        }
+      }
+
+      // SIM Kart Filtresi
       if (currentSimFilter !== 'all') {
         combined = combined.filter(m => (m.simSlot || 'SIM 1') === currentSimFilter);
       }
 
-      // Canlı Arama Filtresi
+      // Arama Filtresi
       if (searchQuery) {
         combined = combined.filter(m => {
           const disp = resolveContact(m.who);
@@ -1049,7 +1233,7 @@
 
       const container = document.getElementById('messages-list');
       if (combined.length === 0) {
-        container.innerHTML = '<div class="empty-state">Eşleşen mesaj bulunamadı.</div>';
+        container.innerHTML = '<div class="empty-state">Bu sekmede eşleşen mesaj bulunamadı.</div>';
         return;
       }
 
@@ -1059,6 +1243,7 @@
         const isChecked = selectedMessages.has(m.id) ? 'checked' : '';
         const simTag = m.simSlot || 'SIM 1';
         const simBadgeClass = simTag === 'SIM 2' ? 'sim-2' : 'sim-1';
+        const assignedCat = getSenderCategory(m.who);
 
         return `
           <div class="sms-item ${m.kind}" onclick="openChatView('${m.who}')">
@@ -1068,6 +1253,7 @@
                 <span class="sms-sender">
                   ${isSent ? '📤 Kime: ' : ''}${display.title}
                   ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
+                  ${assignedCat ? `<span class="category-badge">📁 ${assignedCat}</span>` : ''}
                   <span class="sim-badge ${simBadgeClass}">${simTag}</span>
                 </span>
                 <span class="sms-date">${m.date}</span>
@@ -1154,8 +1340,8 @@
     function saveRules(rules) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rules));
       const bridge = getBridge();
-      if (bridge && bridge.saveRules) {
-        bridge.saveRules(JSON.stringify(rules));
+      if (bridge && bridge.saveStoreData) {
+        bridge.saveStoreData("rules", JSON.stringify(rules));
       }
       renderRules();
     }
@@ -1192,15 +1378,13 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      initCategories();
       renderRules();
       initSims();
       
-      // İlk açılışta eski/yeni SMS'leri sessizce senkronize et
       const bridge = getBridge();
       if (bridge && bridge.syncDeviceSms) {
-        try {
-          bridge.syncDeviceSms();
-        } catch(e) {}
+        try { bridge.syncDeviceSms(); } catch(e) {}
       }
 
       loadAllMessages();
