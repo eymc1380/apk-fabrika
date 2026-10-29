@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Merkez Kalkan ve Mesaj Vektoru -->
+    <path
+        android:fillColor="#0284c7"
+        android:pathData="M54,20 C38,20 32,27 32,27 L32,56 C32,74 54,88 54,88 C54,88 76,74 76,56 L76,27 C76,27 70,20 54,20 Z" />
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M44,42 L64,42 C66.2,42 68,43.8 68,46 L68,58 C68,60.2 66.2,62 64,62 L50,62 L44,68 L44,46 C44,43.8 45.8,42 44,42 Z" />
+</vector>
