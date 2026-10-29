@@ -7,6 +7,6 @@ import android.content.Intent;
 public class MmsReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        // MMS islemleri ileride eklenebilir, varsayilan SMS sartidir.
+        // MMS sinyalleri icin zorunlu dummy receiver
     }
 }
