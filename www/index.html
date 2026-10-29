@@ -1194,6 +1194,15 @@
     window.addEventListener('DOMContentLoaded', () => {
       renderRules();
       initSims();
+      
+      // İlk açılışta eski/yeni SMS'leri sessizce senkronize et
+      const bridge = getBridge();
+      if (bridge && bridge.syncDeviceSms) {
+        try {
+          bridge.syncDeviceSms();
+        } catch(e) {}
+      }
+
       loadAllMessages();
     });
   </script>
