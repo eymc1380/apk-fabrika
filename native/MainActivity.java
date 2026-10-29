@@ -70,6 +70,69 @@ public class MainActivity extends BridgeActivity {
             }
 
             @JavascriptInterface
+            public boolean deleteMessagesBulk(String key, String idsJson) {
+                try {
+                    SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                    String data = prefs.getString(key, "[]");
+                    JSONArray array = new JSONArray(data);
+                    JSONArray idsArray = new JSONArray(idsJson);
+                    JSONArray newArray = new JSONArray();
+
+                    for (int i = 0; i < array.length(); i++) {
+                        JSONObject obj = array.getJSONObject(i);
+                        long curId = obj.optLong("id");
+                        boolean match = false;
+                        for (int j = 0; j < idsArray.length(); j++) {
+                            if (idsArray.getLong(j) == curId) {
+                                match = true;
+                                break;
+                            }
+                        }
+                        if (!match) {
+                            newArray.put(obj);
+                        }
+                    }
+
+                    prefs.edit().putString(key, newArray.toString()).apply();
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+
+            @JavascriptInterface
+            public boolean moveMessage(String fromKey, String toKey, long messageId) {
+                try {
+                    SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                    JSONArray fromArr = new JSONArray(prefs.getString(fromKey, "[]"));
+                    JSONArray toArr = new JSONArray(prefs.getString(toKey, "[]"));
+                    JSONArray newFromArr = new JSONArray();
+
+                    JSONObject targetObj = null;
+                    for (int i = 0; i < fromArr.length(); i++) {
+                        JSONObject obj = fromArr.getJSONObject(i);
+                        if (obj.optLong("id") == messageId) {
+                            targetObj = obj;
+                        } else {
+                            newFromArr.put(obj);
+                        }
+                    }
+
+                    if (targetObj != null) {
+                        toArr.put(targetObj);
+                        prefs.edit()
+                            .putString(fromKey, newFromArr.toString())
+                            .putString(toKey, toArr.toString())
+                            .apply();
+                        return true;
+                    }
+                    return false;
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+
+            @JavascriptInterface
             public boolean sendSms(String phoneNumber, String message) {
                 try {
                     SmsManager smsManager = SmsManager.getDefault();
@@ -124,6 +187,44 @@ public class MainActivity extends BridgeActivity {
             }
 
             @JavascriptInterface
+            public String getAllContacts() {
+                JSONArray contacts = new JSONArray();
+                try {
+                    ContentResolver cr = getContentResolver();
+                    Cursor cursor = cr.query(
+                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                        new String[]{
+                            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                            ContactsContract.CommonDataKinds.Phone.NUMBER
+                        },
+                        null, null,
+                        ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
+                    );
+
+                    if (cursor != null) {
+                        while (cursor.moveToNext()) {
+                            int nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+                            int numIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+                            if (nameIdx != -1 && numIdx != -1) {
+                                String name = cursor.getString(nameIdx);
+                                String number = cursor.getString(numIdx);
+                                if (name != null && number != null) {
+                                    JSONObject c = new JSONObject();
+                                    c.put("name", name);
+                                    c.put("phone", number.replaceAll("\\s+", ""));
+                                    contacts.put(c);
+                                }
+                            }
+                        }
+                        cursor.close();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return contacts.toString();
+            }
+
+            @JavascriptInterface
             public int syncDeviceSms() {
                 int importedCount = 0;
                 try {
@@ -144,7 +245,7 @@ public class MainActivity extends BridgeActivity {
                         int addressIdx = cursor.getColumnIndex("address");
                         int bodyIdx = cursor.getColumnIndex("body");
                         int dateIdx = cursor.getColumnIndex("date");
-                        int typeIdx = cursor.getColumnIndex("type"); // 1: Gelen, 2: Giden
+                        int typeIdx = cursor.getColumnIndex("type");
 
                         SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
 
@@ -159,7 +260,6 @@ public class MainActivity extends BridgeActivity {
                             String formattedDate = sdf.format(new Date(timestamp));
 
                             if (type == 2) {
-                                // Giden mesaj
                                 JSONObject sentItem = new JSONObject();
                                 sentItem.put("id", timestamp);
                                 sentItem.put("recipient", address);
@@ -168,7 +268,6 @@ public class MainActivity extends BridgeActivity {
                                 sentArray.put(sentItem);
                                 importedCount++;
                             } else {
-                                // Gelen mesaj - Filtre kontrolü
                                 boolean isSpam = false;
                                 String reason = "";
 
