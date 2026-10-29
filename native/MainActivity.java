@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.ContactsContract;
 import android.telephony.SmsManager;
 import android.telephony.SubscriptionInfo;
@@ -13,6 +14,9 @@ import android.telephony.SubscriptionManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -24,10 +28,15 @@ import org.json.JSONObject;
 
 public class MainActivity extends BridgeActivity {
     private static final String PREF_NAME = "SMS_FILTER_STORE";
+    private static final String BACKUP_DIR_NAME = "SmsFilterBackup";
+    private static final String BACKUP_FILE_NAME = "backup_data.json";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Uygulama acildiginda kalici disk dosyasindan SharedPreferences'a geri yukle
+        restoreFromPersistentFile();
 
         WebView webView = this.getBridge().getWebView();
         webView.addJavascriptInterface(new Object() {
@@ -42,12 +51,14 @@ public class MainActivity extends BridgeActivity {
             public void saveRules(String rulesJson) {
                 SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
                 prefs.edit().putString("rules", rulesJson).apply();
+                saveToPersistentFile(); // Diske aninda kalici yedek al
             }
 
             @JavascriptInterface
             public void clearMessages(String key) {
                 SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
                 prefs.edit().putString(key, "[]").apply();
+                saveToPersistentFile();
             }
 
             @JavascriptInterface
@@ -66,6 +77,7 @@ public class MainActivity extends BridgeActivity {
                     }
 
                     prefs.edit().putString(key, newArray.toString()).apply();
+                    saveToPersistentFile();
                     return true;
                 } catch (Exception e) {
                     return false;
@@ -97,6 +109,7 @@ public class MainActivity extends BridgeActivity {
                     }
 
                     prefs.edit().putString(key, newArray.toString()).apply();
+                    saveToPersistentFile();
                     return true;
                 } catch (Exception e) {
                     return false;
@@ -127,6 +140,7 @@ public class MainActivity extends BridgeActivity {
                             .putString(fromKey, newFromArr.toString())
                             .putString(toKey, toArr.toString())
                             .apply();
+                        saveToPersistentFile();
                         return true;
                     }
                     return false;
@@ -145,7 +159,7 @@ public class MainActivity extends BridgeActivity {
                         for (SubscriptionInfo info : infoList) {
                             JSONObject simObj = new JSONObject();
                             simObj.put("subId", info.getSubscriptionId());
-                            simObj.put("slotIndex", info.getSimSlotIndex() + 1); // 1 veya 2
+                            simObj.put("slotIndex", info.getSimSlotIndex() + 1);
                             CharSequence carrier = info.getCarrierName();
                             simObj.put("carrier", carrier != null ? carrier.toString() : ("SIM " + (info.getSimSlotIndex() + 1)));
                             simArray.put(simObj);
@@ -185,6 +199,7 @@ public class MainActivity extends BridgeActivity {
 
                     sentArray.put(sentObj);
                     prefs.edit().putString("sent_messages", sentArray.toString()).apply();
+                    saveToPersistentFile();
 
                     return true;
                 } catch (Exception e) {
@@ -279,7 +294,7 @@ public class MainActivity extends BridgeActivity {
                         int bodyIdx = cursor.getColumnIndex("body");
                         int dateIdx = cursor.getColumnIndex("date");
                         int typeIdx = cursor.getColumnIndex("type");
-                        int subIdIdx = cursor.getColumnIndex("sub_id"); // Dual SIM kimliği
+                        int subIdIdx = cursor.getColumnIndex("sub_id");
 
                         SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
 
@@ -291,6 +306,11 @@ public class MainActivity extends BridgeActivity {
                             int subId = subIdIdx != -1 ? cursor.getInt(subIdIdx) : 1;
 
                             if (address == null || body == null) continue;
+
+                            // Tekrar eklenmesini onlemek icin id kontrolu
+                            if (isAlreadyExists(inboxArray, timestamp) || isAlreadyExists(sentArray, timestamp) || isAlreadyExists(spamArray, timestamp)) {
+                                continue;
+                            }
 
                             String simTag = "SIM " + (subId <= 1 ? "1" : "2");
                             String formattedDate = sdf.format(new Date(timestamp));
@@ -360,6 +380,8 @@ public class MainActivity extends BridgeActivity {
                         .putString("spam_messages", spamArray.toString())
                         .apply();
 
+                    saveToPersistentFile();
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -367,5 +389,80 @@ public class MainActivity extends BridgeActivity {
             }
 
         }, "AndroidBridge");
+    }
+
+    private boolean isAlreadyExists(JSONArray array, long id) {
+        for (int i = 0; i < array.length(); i++) {
+            JSONObject obj = array.optJSONObject(i);
+            if (obj != null && obj.optLong("id") == id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Telefonun kalıcı ortak klasörüne (Documents/SmsFilterBackup) JSON dosyası yazar
+    private synchronized void saveToPersistentFile() {
+        try {
+            File docsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+            File backupDir = new File(docsDir, BACKUP_DIR_NAME);
+            if (!backupDir.exists()) {
+                backupDir.mkdirs();
+            }
+
+            File file = new File(backupDir, BACKUP_FILE_NAME);
+            SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+
+            JSONObject root = new JSONObject();
+            root.put("rules", prefs.getString("rules", ""));
+            root.put("inbox_messages", prefs.getString("inbox_messages", "[]"));
+            root.put("sent_messages", prefs.getString("sent_messages", "[]"));
+            root.put("spam_messages", prefs.getString("spam_messages", "[]"));
+
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(root.toString().getBytes("UTF-8"));
+            fos.flush();
+            fos.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Kurulum sonrası uygulama ilk açıldığında Documents/SmsFilterBackup/backup_data.json varsa geri yükler
+    private synchronized void restoreFromPersistentFile() {
+        try {
+            File docsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+            File backupDir = new File(docsDir, BACKUP_DIR_NAME);
+            File file = new File(backupDir, BACKUP_FILE_NAME);
+
+            if (!file.exists()) return;
+
+            FileInputStream fis = new FileInputStream(file);
+            byte[] data = new byte[(int) file.length()];
+            fis.read(data);
+            fis.close();
+
+            String jsonStr = new String(data, "UTF-8");
+            JSONObject root = new JSONObject(jsonStr);
+
+            SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+
+            if (root.has("rules") && !root.getString("rules").isEmpty()) {
+                editor.putString("rules", root.getString("rules"));
+            }
+            if (root.has("inbox_messages")) {
+                editor.putString("inbox_messages", root.getString("inbox_messages"));
+            }
+            if (root.has("sent_messages")) {
+                editor.putString("sent_messages", root.getString("sent_messages"));
+            }
+            if (root.has("spam_messages")) {
+                editor.putString("spam_messages", root.getString("spam_messages"));
+            }
+            editor.apply();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
