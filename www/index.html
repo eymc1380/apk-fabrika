@@ -70,7 +70,7 @@
     }
 
     .search-box-wrapper {
-      padding: 10px 14px 4px 14px;
+      padding: 10px 14px 6px 14px;
       background: #0d1527;
       border-bottom: 1px solid var(--border);
     }
@@ -115,7 +115,6 @@
       cursor: pointer;
     }
 
-    /* ÜST KATEGORİ SEKMELERİ (DİNAMİK) */
     .tabs-wrapper {
       display: flex;
       background: #111827;
@@ -576,11 +575,19 @@
     </div>
   </div>
 
+  <!-- ARAMA BARI VE ATANMAMIŞLAR KUTUSU -->
   <div class="search-box-wrapper">
     <input type="text" id="sms-search" class="search-box" placeholder="🔍 Mesajlarda, numaralarda veya kişilerde ara..." oninput="handleSearch(this.value)">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding: 0 4px;">
+      <label style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <input type="checkbox" id="chk-unassigned-only" onchange="toggleUnassignedFilter(this.checked)" style="width: 14px; height: 14px; accent-color: var(--warning);">
+        <span>Yalnızca sekmeye atanmamış SMS'leri göster</span>
+      </label>
+      <span id="unassigned-badge-count" style="font-size: 0.7rem; color: var(--warning); font-weight: bold;"></span>
+    </div>
   </div>
 
-  <!-- ÇOKLU SEÇİM EYLEM BARI (KATEGORİ ATAMA EKLENDİ) -->
+  <!-- ÇOKLU SEÇİM EYLEM BARI -->
   <div id="selection-bar" class="selection-toolbar">
     <span id="selected-count" style="font-size: 0.85rem; font-weight: bold;">0 seçildi</span>
     <div class="selection-toolbar-actions">
@@ -602,6 +609,7 @@
           <button class="sub-tab-btn active" onclick="switchSubTab('all')">Tüm Akış</button>
           <button class="sub-tab-btn" onclick="switchSubTab('inbox')">Gelenler</button>
           <button class="sub-tab-btn" onclick="switchSubTab('sent')">Gidenler</button>
+          <button class="sub-tab-btn" id="btn-sub-unassigned" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.4);" onclick="switchSubTab('unassigned')">📂 Atanmamışlar</button>
         </div>
         <div class="filter-group" id="sim-filter-group">
           <button class="sub-tab-btn active" onclick="switchSimFilter('all')">Tüm Hatlar</button>
@@ -612,7 +620,7 @@
       <div id="messages-list"></div>
     </div>
 
-    <!-- KURALLAR SEKMESİ (KATEGORİ YÖNETİMİ DAHİL) -->
+    <!-- KURALLAR SEKMESİ -->
     <div id="tab-rules" class="tab-pane">
       <div class="card">
         <h3>Özel Sekmeler (Kategoriler)</h3>
@@ -697,7 +705,7 @@
     </div>
   </div>
 
-  <!-- KATEGORİYE / SEKMEYE ATA MODALI -->
+  <!-- KATEGORİYE ATA MODALI -->
   <div id="assign-category-modal" class="modal-overlay">
     <div class="modal-card">
       <h2>
@@ -729,15 +737,15 @@
     const STORAGE_KEY = "SMS_FILTER_RULES";
     const contactCache = {};
     let allContactsList = [];
-    let currentFilter = 'all';
+    let currentFilter = 'all'; // all, inbox, sent, unassigned
     let currentSimFilter = 'all';
-    let currentMainTab = 'all'; // all, rules, spam, veya kategori adı (Örn: BANKA)
+    let currentMainTab = 'all';
     let activeChatTarget = null;
     let searchQuery = '';
     const selectedMessages = new Set();
     let detectedSims = [];
+    let onlyUnassigned = false;
 
-    // Dinamik Kategoriler: [{ name: 'BANKA', senders: ['VAKIFBANK', 'GARANTI', '0850...'] }]
     let categories = [];
 
     function getBridge() {
@@ -846,6 +854,11 @@
         }
       }
       return null;
+    }
+
+    function toggleUnassignedFilter(checked) {
+      onlyUnassigned = checked;
+      loadAllMessages();
     }
 
     function openAssignCategoryModal() {
@@ -1204,6 +1217,7 @@
       if (currentFilter === 'all') combined = [...inbox, ...sent];
       else if (currentFilter === 'inbox') combined = inbox;
       else if (currentFilter === 'sent') combined = sent;
+      else if (currentFilter === 'unassigned') combined = [...inbox, ...sent].filter(m => getSenderCategory(m.who) === null);
 
       // Özel Dinamik Kategori Sekmesi Seçiliyse (Örn: BANKA)
       if (currentMainTab !== 'all' && currentMainTab !== 'rules' && currentMainTab !== 'spam') {
@@ -1212,6 +1226,11 @@
           const setSenders = new Set(cat.senders.map(s => s.toUpperCase()));
           combined = combined.filter(m => setSenders.has((m.who || '').toUpperCase()));
         }
+      }
+
+      // Atanmamışlar Checkbox Filtresi
+      if (onlyUnassigned && currentFilter !== 'unassigned') {
+        combined = combined.filter(m => getSenderCategory(m.who) === null);
       }
 
       // SIM Kart Filtresi
@@ -1230,6 +1249,11 @@
       }
 
       combined.sort((a, b) => b.id - a.id);
+
+      // Atanmamış mesaj sayısını hesaplayıp etikete yaz
+      const totalUnassigned = [...inbox, ...sent].filter(m => getSenderCategory(m.who) === null).length;
+      const badge = document.getElementById('unassigned-badge-count');
+      if (badge) badge.innerText = totalUnassigned > 0 ? `(${totalUnassigned} atanmamış)` : '';
 
       const container = document.getElementById('messages-list');
       if (combined.length === 0) {
