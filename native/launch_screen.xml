@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Tema Rengi Arka Plan (#0b0f19) -->
+    <item android:drawable="@color/splash_bg" />
+
+    <!-- Ortalanmis Kalkan Logosu -->
+    <item
+        android:width="96dp"
+        android:height="96dp"
+        android:gravity="center"
+        android:drawable="@drawable/ic_launcher_foreground" />
+</layer-list>
