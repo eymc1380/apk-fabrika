@@ -29,14 +29,10 @@ jobs:
           npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap add android
 
-          # Sürüm kodunu GitHub run_number ile otomatik artır (üzerine güncelleme için)
-          sed -i 's/versionCode 1/versionCode ${{ github.run_number }}/g' android/app/build.gradle
-
-          # Native dosyaları yerine kopyala
+          # Native dosyaları kopyala
           cp -r native/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           cp -r native/*.java android/app/src/main/java/com/erhan/apkfabrika/
           
-          # Renk ve ikon dosyaları varsa kopyala
           [ -f native/colors.xml ] && cp native/colors.xml android/app/src/main/res/values/colors.xml || true
           [ -f native/styles.xml ] && cp native/styles.xml android/app/src/main/res/values/styles.xml || true
           [ -f native/launch_screen.xml ] && cp native/launch_screen.xml android/app/src/main/res/drawable/launch_screen.xml || true
@@ -44,24 +40,48 @@ jobs:
 
           npx cap copy android
 
-      - name: 5. Sabit Keystore (İmza Anahtarı) Oluştur
+      - name: 5. Sabit Keystore Oluştur ve Gradle'a Tanımla
         run: |
-          # Sabit bir imza anahtarı oluştur (Her derlemede aynı imza kullanılacak)
-          keytool -genkey -v -keystore release.keystore -alias smsapp -keyalg RSA -keysize 2048 -validity 10000 -storepass erhan123 -keypass erhan123 -dname "CN=Erhan, OU=SMS, O=Fabrika, L=Bitlis, C=TR"
+          # Sabit debug/release anahtarı oluştur
+          keytool -genkey -v -keystore android/app/release.keystore -alias smsapp -keyalg RSA -keysize 2048 -validity 10000 -storepass erhan123 -keypass erhan123 -dname "CN=Erhan, OU=SMS, O=Fabrika, L=Bitlis, C=TR"
 
-      - name: 6. APK Dosyasını Derle
+          # Gradle dosyasına otomatik artan versionCode ve sabit imzalama bloğunu ekle
+          cat << 'EOF' >> android/app/build.gradle
+
+          android {
+              defaultConfig {
+                  versionCode = 100 + ${{ github.run_number }}
+              }
+              signingConfigs {
+                  release {
+                      storeFile file('release.keystore')
+                      storePassword 'erhan123'
+                      keyAlias 'smsapp'
+                      keyPassword 'erhan123'
+                      v1SigningEnabled true
+                      v2SigningEnabled true
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled false
+                  }
+              }
+          }
+          EOF
+
+      - name: 6. APK Dosyasını Derle ve İmzala (Gradle)
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease
 
-      - name: 7. APK'yı Sabit Anahtarla İmzala ve Hizala
+      - name: 7. İmzalı ve Hizalanmış APK'yı Kaydet
         run: |
-          # Üretilen Release APK'yı sabit anahtarla imzala
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore release.keystore -storepass erhan123 -keypass erhan123 android/app/build/outputs/apk/release/app-release-unsigned.apk smsapp
-          cp android/app/build/outputs/apk/release/app-release-unsigned.apk sms-fabrika-signed.apk
+          cp android/app/build/outputs/apk/release/app-release.apk sms-fabrika-signed.apk
 
-      - name: 8. İmzalı APK'yı Yükle (Artifact)
+      - name: 8. APK'yı Yükle (Artifact)
         uses: actions/upload-artifact@v4
         with:
           name: sms-fabrika-signed
