@@ -1,10 +1,13 @@
 {
-  "name": "apk-fabrika",
+  "name": "tablo-excel",
   "version": "1.0.0",
-  "description": "Otomatik APK Derleyici",
+  "description": "TIFF ve Resimden Excel Tablo Aktarici",
+  "main": "index.js",
   "dependencies": {
     "@capacitor/android": "^6.0.0",
     "@capacitor/cli": "^6.0.0",
-    "@capacitor/core": "^6.0.0"
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/filesystem": "^6.0.0",
+    "@capacitor/share": "^6.0.0"
   }
 }
