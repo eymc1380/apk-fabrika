@@ -2,7 +2,7 @@ name: Otomatik APK Derleyici
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "*" ] # Hangi dalda (branch) kayıt yaparsan yap otomatik tetiklenir
   workflow_dispatch:
 
 jobs:
@@ -23,42 +23,52 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: 4. Capacitor Projesini Hazırla
+      - name: 4. Capacitor Projesini Hazırla (Dinamik Paket ve Native Desteği)
         run: |
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          # Eğer package.json yoksa oluştur, varsa içindeki paketleri (filesystem, share vb.) kur
+          if [ ! -f package.json ]; then
+            npm init -y
+          fi
+          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/filesystem @capacitor/share
           npx cap add android
 
-          # Web varlıklarını senkronize et
-          npx cap sync android
+          # capacitor.config.json içinden appId'yi otomatik oku ve klasör yoluna çevir (Örn: com/erhan/tabloexcel)
+          APP_ID=$(node -p "require('./capacitor.config.json').appId")
+          PKG_PATH=$(echo $APP_ID | tr '.' '/')
+          echo "Aktif Paket Yolu: $PKG_PATH"
 
-          # Native Java ve Manifest dosyalarını kopyala
-          cp -r native/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
-          cp -r native/*.java android/app/src/main/java/com/erhan/apkfabrika/
+          # Native dosyalar varsa (örneğin SMS projesinde) kopyala, yoksa hata vermeden geç
+          [ -f native/AndroidManifest.xml ] && cp -r native/AndroidManifest.xml android/app/src/main/AndroidManifest.xml || true
+          if compgen -G "native/*.java" > /dev/null; then
+            mkdir -p android/app/src/main/java/$PKG_PATH/
+            cp -r native/*.java android/app/src/main/java/$PKG_PATH/
+          fi
           
-          # Renk, stil ve splash dosyalarını yerleştir
+          # Renk, stil ve splash dosyaları varsa yerleştir
           [ -f native/colors.xml ] && cp native/colors.xml android/app/src/main/res/values/colors.xml || true
           [ -f native/styles.xml ] && cp native/styles.xml android/app/src/main/res/values/styles.xml || true
           [ -f native/launch_screen.xml ] && cp native/launch_screen.xml android/app/src/main/res/drawable/launch_screen.xml || true
-          [ -f native/ic_launcher_foreground.xml ] && cp native/ic_launcher_foreground.xml android/app/src/main/res/drawable/ic_launcher_foreground.xml || true
-
-          # Masaüstü İkonunu Kalkan Vektörüne Zorla (Android 8+)
-          mkdir -p android/app/src/main/res/mipmap-anydpi-v26
-          cat << 'EOF' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          
+          if [ -f native/ic_launcher_foreground.xml ]; then
+            cp native/ic_launcher_foreground.xml android/app/src/main/res/drawable/ic_launcher_foreground.xml
+            mkdir -p android/app/src/main/res/mipmap-anydpi-v26
+            cat << 'EOF' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           <?xml version="1.0" encoding="utf-8"?>
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
               <background android:drawable="@color/splash_bg"/>
               <foreground android:drawable="@drawable/ic_launcher_foreground"/>
           </adaptive-icon>
           EOF
-          cp android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+            cp android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          fi
+
+          # Web varlıklarını ve Capacitor eklentilerini senkronize et
+          npx cap sync android
 
       - name: 5. Sabit Keystore Oluştur ve Gradle'a Tanımla
         run: |
-          # Sabit debug/release anahtarı oluştur
-          keytool -genkey -v -keystore android/app/release.keystore -alias smsapp -keyalg RSA -keysize 2048 -validity 10000 -storepass erhan123 -keypass erhan123 -dname "CN=Erhan, OU=SMS, O=Fabrika, L=Bitlis, C=TR"
+          keytool -genkey -v -keystore android/app/release.keystore -alias fabrika -keyalg RSA -keysize 2048 -validity 10000 -storepass erhan123 -keypass erhan123 -dname "CN=Erhan, OU=IT, O=Fabrika, L=Bitlis, C=TR"
 
-          # Gradle dosyasına otomatik artan versionCode ve sabit imzalama bloğunu ekle
           cat << 'EOF' >> android/app/build.gradle
 
           android {
@@ -69,7 +79,7 @@ jobs:
                   release {
                       storeFile file('release.keystore')
                       storePassword 'erhan123'
-                      keyAlias 'smsapp'
+                      keyAlias 'fabrika'
                       keyPassword 'erhan123'
                       v1SigningEnabled true
                       v2SigningEnabled true
@@ -90,12 +100,12 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease
 
-      - name: 7. İmzalı ve Hizalanmış APK'yı Kaydet
+      - name: 7. İmzalı APK'yı Dal (Branch) Adıyla Kaydet
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk sms-fabrika-signed.apk
+          cp android/app/build/outputs/apk/release/app-release.apk ${{ github.ref_name }}-signed.apk
 
       - name: 8. APK'yı Yükle (Artifact)
         uses: actions/upload-artifact@v4
         with:
-          name: sms-fabrika-signed
-          path: sms-fabrika-signed.apk
+          name: ${{ github.ref_name }}-signed
+          path: ${{ github.ref_name }}-signed.apk
