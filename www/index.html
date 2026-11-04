@@ -2,1417 +2,647 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SMS Mesajlar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tablo Excel</title>
+  <!-- TIFF Çözücü (UTIF.js) ve Excel Üretici (SheetJS) -->
+  <script src="https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
-      --bg: #0b0f19;
-      --card-bg: #161e2e;
-      --border: #243046;
-      --text: #f3f4f6;
-      --text-muted: #9ca3af;
-      --primary: #0284c7;
-      --primary-hover: #0369a1;
-      --danger: #ef4444;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --bubble-in: #1e293b;
-      --bubble-out: #0369a1;
-      --sim1: #3b82f6;
-      --sim2: #ec4899;
+      --primary: #0f172a;
+      --accent: #fbbf24;
+      --blue: #2563eb;
+      --green: #16a34a;
+      --red: #dc2626;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
     }
-
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-
-    .header {
-      background-color: #0d1527;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .header h1 {
-      margin: 0;
-      font-size: 1.05rem;
-      font-weight: 600;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .btn-sync {
-      background: #1e293b;
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      cursor: pointer;
-    }
-
-    .search-box-wrapper {
-      padding: 10px 14px 6px 14px;
-      background: #0d1527;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .search-box {
-      width: 100%;
-      background: #0b0f19;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 20px;
-      box-sizing: border-box;
-      outline: none;
-      font-size: 0.85rem;
-    }
-
-    .selection-toolbar {
-      display: none;
-      background: #1e293b;
-      padding: 10px 16px;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 2px solid var(--primary);
-    }
-
-    .selection-toolbar.active {
-      display: flex;
-    }
-
-    .selection-toolbar-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .btn-action {
-      background: #0f172a;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      cursor: pointer;
-    }
-
-    .tabs-wrapper {
-      display: flex;
-      background: #111827;
-      border-bottom: 1px solid var(--border);
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-
-    .tab-btn {
-      padding: 12px 16px;
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      white-space: nowrap;
-    }
-
-    .tab-btn.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
-    }
-
-    .content {
-      padding: 14px;
-      padding-bottom: 80px;
-    }
-
-    .tab-pane {
-      display: none;
-    }
-
-    .tab-pane.active {
-      display: block;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px;
-      margin-bottom: 12px;
-    }
-
-    .filters-row {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .filter-group {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 2px;
-    }
-
-    .sub-tab-btn {
-      padding: 5px 12px;
-      border-radius: 16px;
-      background: #1e293b;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .sub-tab-btn.active {
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 40px; }
+    
+    /* Üst Bar */
+    .topbar {
       background: var(--primary);
       color: #fff;
-      border-color: var(--primary);
-    }
-
-    .sub-tab-btn.sim1.active {
-      background: var(--sim1);
-      border-color: var(--sim1);
-    }
-
-    .sub-tab-btn.sim2.active {
-      background: var(--sim2);
-      border-color: var(--sim2);
-    }
-
-    .sms-item {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 14px;
-      margin-bottom: 10px;
-      cursor: pointer;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .sms-item.inbox {
-      border-left: 4px solid var(--success);
-    }
-
-    .sms-item.sent {
-      border-left: 4px solid var(--primary);
-    }
-
-    .sms-item.spam {
-      border-left: 4px solid var(--danger);
-    }
-
-    .sms-checkbox {
-      margin-top: 4px;
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      accent-color: var(--primary);
-    }
-
-    .sms-content-wrap {
-      flex: 1;
-    }
-
-    .sms-header {
+      padding: 14px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
-    }
-
-    .sms-sender {
-      font-weight: bold;
-      font-size: 0.95rem;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .sms-sender .sender-sub {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      font-weight: normal;
-    }
-
-    .category-badge {
-      font-size: 0.65rem;
-      background: rgba(245, 158, 11, 0.2);
-      color: var(--warning);
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: bold;
-    }
-
-    .sim-badge {
-      font-size: 0.65rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-
-    .sim-badge.sim-1 {
-      background: rgba(59, 130, 246, 0.2);
-      color: #60a5fa;
-      border: 1px solid rgba(59, 130, 246, 0.4);
-    }
-
-    .sim-badge.sim-2 {
-      background: rgba(236, 72, 153, 0.2);
-      color: #f472b6;
-      border: 1px solid rgba(236, 72, 153, 0.4);
-    }
-
-    .sms-date {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .sms-body {
-      font-size: 0.88rem;
-      color: #d1d5db;
-      line-height: 1.4;
-      word-break: break-word;
-    }
-
-    .sms-reason {
-      margin-top: 8px;
-      font-size: 0.75rem;
-      color: var(--danger);
-      background: rgba(239, 68, 68, 0.1);
-      padding: 4px 8px;
-      border-radius: 4px;
-      display: inline-block;
-    }
-
-    .empty-state {
-      text-align: center;
-      color: var(--text-muted);
-      padding: 40px 10px;
-      font-size: 0.9rem;
-    }
-
-    .input-group {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-
-    input[type="text"], input[type="tel"], textarea, select {
-      flex: 1;
-      background: #0f172a;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 10px;
-      border-radius: 6px;
-      outline: none;
-      font-size: 0.9rem;
-      box-sizing: border-box;
-      font-family: inherit;
-    }
-
-    button.btn-primary {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    button.btn-danger {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--danger);
-      border: 1px solid var(--danger);
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .tag-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 16px;
-    }
-
-    .tag {
-      background: #1e293b;
-      border: 1px solid var(--border);
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .tag .remove-btn {
-      color: var(--danger);
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .fab-btn {
-      position: fixed;
-      right: 20px;
-      bottom: 24px;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background-color: var(--primary);
-      color: #ffffff;
-      border: none;
-      font-size: 26px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-      cursor: pointer;
+      border-bottom: 3px solid var(--accent);
+      position: sticky;
+      top: 0;
       z-index: 100;
     }
-
-    .chat-view {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--bg);
-      z-index: 300;
-      display: none;
-      flex-direction: column;
-    }
-
-    .chat-view.open {
-      display: flex;
-    }
-
-    .chat-header {
-      background: #0d1527;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .chat-back-btn {
-      background: none;
-      border: none;
-      color: var(--text);
-      font-size: 1.4rem;
+    .topbar h1 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .topbar h1 span { color: var(--accent); }
+    .icon-btn {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 13px;
       cursor: pointer;
     }
 
-    .chat-body {
-      flex: 1;
-      padding: 16px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+    .container { padding: 14px; max-width: 900px; margin: 0 auto; }
 
-    .chat-bubble {
-      max-width: 80%;
-      padding: 10px 14px;
+    .card {
+      background: var(--card);
       border-radius: 12px;
-      font-size: 0.9rem;
-      line-height: 1.4;
-      word-break: break-word;
-    }
-
-    .chat-bubble.in {
-      align-self: flex-start;
-      background: var(--bubble-in);
-      border-bottom-left-radius: 2px;
-    }
-
-    .chat-bubble.out {
-      align-self: flex-end;
-      background: var(--bubble-out);
-      color: #fff;
-      border-bottom-right-radius: 2px;
-    }
-
-    .bubble-time {
-      font-size: 0.68rem;
-      color: rgba(255, 255, 255, 0.6);
-      margin-top: 4px;
-      text-align: right;
-    }
-
-    .chat-footer {
-      background: #0d1527;
-      padding: 10px 12px;
-      display: flex;
-      gap: 8px;
-      border-top: 1px solid var(--border);
-    }
-
-    .chat-footer input {
-      flex: 1;
-      background: #161e2e;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 10px 14px;
-      border-radius: 20px;
-      outline: none;
-    }
-
-    .chat-footer button {
-      background: var(--primary);
-      border: none;
-      color: #fff;
-      padding: 0 16px;
-      border-radius: 20px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(3px);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
       padding: 16px;
-      box-sizing: border-box;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
     }
 
-    .modal-overlay.open {
-      display: flex;
+    /* Ayarlar Paneli */
+    #settingsPanel { display: none; border-left: 4px solid var(--accent); }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #475569; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;
     }
 
-    .modal-card {
-      background-color: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      width: 100%;
-      max-width: 420px;
-      max-height: 85vh;
-      display: flex;
-      flex-direction: column;
-      padding: 20px;
-      box-sizing: border-box;
+    /* Butonlar */
+    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 13px 14px; border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer; color: #fff;
+      transition: opacity 0.2s;
+    }
+    .btn:active { opacity: 0.8; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-camera { background: var(--blue); }
+    .btn-file { background: var(--primary); }
+    .btn-analyze { background: #d97706; width: 100%; margin-top: 12px; font-size: 15px; }
+    .btn-excel { background: var(--green); width: 100%; margin-top: 12px; font-size: 15px; }
+    .btn-sm { padding: 7px 12px; font-size: 12px; border-radius: 6px; }
+
+    /* Önizleme Alanı */
+    .preview-list {
+      display: flex; gap: 10px; overflow-x: auto; padding: 8px 0; margin-top: 8px;
+    }
+    .preview-item {
+      position: relative; flex: 0 0 110px; height: 140px;
+      border: 2px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #000;
+    }
+    .preview-item img { width: 100%; height: 100%; object-fit: contain; }
+    .preview-badge {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(15,23,42,0.85); color: var(--accent);
+      font-size: 11px; text-align: center; padding: 3px; font-weight: 600;
     }
 
-    .modal-card h2 {
-      margin: 0 0 14px 0;
-      font-size: 1.1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    /* Durum Çubuğu */
+    .status-box {
+      display: none; align-items: center; gap: 10px;
+      padding: 12px; border-radius: 8px; background: #eff6ff;
+      border: 1px solid #bfdbfe; color: #1e40af; font-size: 13px; margin-bottom: 14px;
     }
+    .spinner {
+      width: 18px; height: 18px; border: 3px solid #93c5fd;
+      border-top-color: #1d4ed8; border-radius: 50%;
+      animation: spin 0.8s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .modal-card .close-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 1.4rem;
-      cursor: pointer;
+    /* Sekmeler ve Tablo */
+    .tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+    .tab-btn {
+      padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1;
+      background: #f8fafc; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
     }
+    .tab-btn.active { background: var(--primary); color: var(--accent); border-color: var(--primary); }
 
-    .contact-item {
-      padding: 10px;
-      border-bottom: 1px solid var(--border);
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
+    .table-wrap { overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 8px; max-height: 420px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
+    th, td {
+      border: 1px solid #cbd5e1; padding: 8px 10px; min-width: 90px;
+      outline: none; vertical-align: middle;
     }
-
-    .contact-item:hover {
-      background: #1e293b;
+    th { background: #f1f5f9; font-weight: 700; color: #334155; position: sticky; top: 0; z-index: 2; }
+    td:focus, th:focus { background: #fef9c3; box-shadow: inset 0 0 0 2px #eab308; }
+    .del-col { width: 34px; min-width: 34px; text-align: center; background: #fff1f2; }
+    .del-row-btn {
+      background: var(--red); color: #fff; border: none; border-radius: 4px;
+      width: 22px; height: 22px; font-size: 12px; cursor: pointer;
     }
+    .table-tools { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <div class="header-left">
-      <h1>💬 Mesajlar</h1>
-    </div>
-    <div class="header-actions">
-      <button class="btn-sync" onclick="handleSyncDeviceSms()" title="Telefon hafızasındaki yeni SMS'leri senkronize et">🔄 Senkronize</button>
-    </div>
+  <div class="topbar">
+    <h1>📊 Tablo <span>Excel</span></h1>
+    <button class="icon-btn" onclick="toggleSettings()">⚙️ API Ayarı</button>
   </div>
 
-  <!-- ARAMA BARI VE ATANMAMIŞLAR KUTUSU -->
-  <div class="search-box-wrapper">
-    <input type="text" id="sms-search" class="search-box" placeholder="🔍 Mesajlarda, numaralarda veya kişilerde ara..." oninput="handleSearch(this.value)">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding: 0 4px;">
-      <label style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: pointer;">
-        <input type="checkbox" id="chk-unassigned-only" onchange="toggleUnassignedFilter(this.checked)" style="width: 14px; height: 14px; accent-color: var(--warning);">
-        <span>Yalnızca sekmeye atanmamış SMS'leri göster</span>
-      </label>
-      <span id="unassigned-badge-count" style="font-size: 0.7rem; color: var(--warning); font-weight: bold;"></span>
+  <div class="container">
+    <!-- API Ayar Kartı -->
+    <div class="card" id="settingsPanel">
+      <div class="form-group">
+        <label>Gemini API Anahtarı (Cihazda Kayıtlı Kalır)</label>
+        <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
+      </div>
+      <div class="form-group">
+        <label>Yapay Zeka Modeli</label>
+        <select id="modelInput">
+          <option value="gemini-2.5-flash">gemini-2.5-flash (Önerilen - Hızlı & Keskin)</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+          <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+        </select>
+      </div>
+      <button class="btn btn-file btn-sm" onclick="saveSettings()">💾 Anahtarı Kaydet</button>
     </div>
-  </div>
 
-  <!-- ÇOKLU SEÇİM EYLEM BARI -->
-  <div id="selection-bar" class="selection-toolbar">
-    <span id="selected-count" style="font-size: 0.85rem; font-weight: bold;">0 seçildi</span>
-    <div class="selection-toolbar-actions">
-      <button class="btn-action" onclick="openAssignCategoryModal()" title="Kategoriye Ata">📁 Sekmeye Ata</button>
-      <button class="btn-action" onclick="copySelectedBodies()" title="Metinleri Kopyala">📋 Kopyala</button>
-      <button class="btn-action" onclick="toggleMoveSelected()" title="Karantinaya Taşı / Güvene Al">⇄ Taşı</button>
-      <button class="btn-action" style="color:var(--danger);" onclick="deleteSelectedMessages()" title="Seçilenleri Sil">🗑️ Sil</button>
-      <button class="btn-action" onclick="clearSelection()">İptal</button>
-    </div>
-  </div>
+    <!-- Dosya / Kamera Seçim Kartı -->
+    <div class="card">
+      <div class="btn-grid">
+        <button class="btn btn-camera" onclick="document.getElementById('cameraInput').click()">
+          📷 Kamera ile Çek
+        </button>
+        <button class="btn btn-file" onclick="document.getElementById('fileInput').click()">
+          📂 Dosya / TIFF Seç
+        </button>
+      </div>
 
-  <!-- DİNAMİK ÜST SEKMELER -->
-  <div class="tabs-wrapper" id="main-tabs-bar"></div>
+      <!-- Gizli Inputlar -->
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleFiles(this.files)">
+      <input type="file" id="fileInput" accept=".tif,.tiff,image/tiff,image/*" multiple style="display:none" onchange="handleFiles(this.files)">
 
-  <div class="content">
-    <div id="tab-messages" class="tab-pane active">
-      <div class="filters-row">
-        <div class="filter-group">
-          <button class="sub-tab-btn active" onclick="switchSubTab('all')">Tüm Akış</button>
-          <button class="sub-tab-btn" onclick="switchSubTab('inbox')">Gelenler</button>
-          <button class="sub-tab-btn" onclick="switchSubTab('sent')">Gidenler</button>
-          <button class="sub-tab-btn" id="btn-sub-unassigned" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.4);" onclick="switchSubTab('unassigned')">📂 Atanmamışlar</button>
+      <div id="previewArea" style="display:none; margin-top:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:12px; font-weight:700; color:#475569;" id="pageCountText">Yüklenen Sayfalar</span>
+          <button class="btn btn-sm" style="background:#64748b;" onclick="clearImages()">Temizle</button>
         </div>
-        <div class="filter-group" id="sim-filter-group">
-          <button class="sub-tab-btn active" onclick="switchSimFilter('all')">Tüm Hatlar</button>
-          <button class="sub-tab-btn sim1" onclick="switchSimFilter('SIM 1')">SIM 1</button>
-          <button class="sub-tab-btn sim2" onclick="switchSimFilter('SIM 2')">SIM 2</button>
-        </div>
-      </div>
-      <div id="messages-list"></div>
-    </div>
-
-    <!-- KURALLAR SEKMESİ -->
-    <div id="tab-rules" class="tab-pane">
-      <div class="card">
-        <h3>Özel Sekmeler (Kategoriler)</h3>
-        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Örn: BANKA, AİLE, İŞ. Sekmeyi açıp gelen mesajları bu sekmeye bağlayabilirsiniz.</p>
-        <div class="input-group">
-          <input type="text" id="input-new-category" placeholder="Yeni Sekme Adı (Örn: BANKA)">
-          <button class="btn-primary" onclick="createCategory()">Sekme Oluştur</button>
-        </div>
-        <div id="tags-categories" class="tag-container"></div>
-      </div>
-
-      <div class="card">
-        <h3>Başlık Engelleme (Karantina)</h3>
-        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Gönderici adı bu kelimelerden biriyle eşleşirse karantinaya alınır.</p>
-        <div class="input-group">
-          <input type="text" id="input-title" placeholder="Örn: BAHIS, KUMAR">
-          <button class="btn-primary" onclick="addRule('titles')">Ekle</button>
-        </div>
-        <div id="tags-titles" class="tag-container"></div>
-      </div>
-
-      <div class="card">
-        <h3>B-Kodu Engelleme (BTK)</h3>
-        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Mesaj sonundaki yetkili operatör kodu eşleşirse engellenir.</p>
-        <div class="input-group">
-          <input type="text" id="input-bcode" placeholder="Örn: B214, B002">
-          <button class="btn-primary" onclick="addRule('bcodes')">Ekle</button>
-        </div>
-        <div id="tags-bcodes" class="tag-container"></div>
+        <div class="preview-list" id="previewList"></div>
+        <button class="btn btn-analyze" id="analyzeBtn" onclick="analyzeImages()">
+          🔍 Tabloyu Analiz Et (Gemini Vision)
+        </button>
       </div>
     </div>
 
-    <!-- SPAM / KARANTİNA SEKMESİ -->
-    <div id="tab-spam" class="tab-pane">
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-        <button class="btn-danger" onclick="clearSpam()">Tüm Karantinayı Temizle</button>
-      </div>
-      <div id="spam-list"></div>
+    <!-- Durum Gösterimi -->
+    <div class="status-box" id="statusBox">
+      <div class="spinner" id="statusSpinner"></div>
+      <div id="statusText">İşlem yapılıyor...</div>
     </div>
-  </div>
 
-  <button class="fab-btn" onclick="openComposeModal()" title="Yeni Mesaj">✏️</button>
+    <!-- Sonuç ve Düzenleme Kartı -->
+    <div class="card" id="resultCard" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3 style="font-size:15px;">✏️ Tablo Önizleme & Düzenleme</h3>
+        <span style="font-size:11px; color:#64748b;">Hücrelere dokunarak düzeltebilirsiniz</span>
+      </div>
 
-  <!-- YENİ MESAJ MODALI -->
-  <div id="compose-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h2>
-        <span>Yeni SMS Gönder</span>
-        <button class="close-btn" onclick="closeComposeModal()">&times;</button>
-      </h2>
-      <div style="margin-bottom: 12px;">
-        <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">Gönderilecek SIM Kart</label>
-        <select id="compose-sim-select"></select>
-      </div>
-      <div style="margin-bottom: 12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-          <label style="font-size:0.8rem; color:var(--text-muted);">Alıcı Numara</label>
-          <button style="background:none; border:none; color:var(--primary); font-size:0.8rem; cursor:pointer; font-weight:bold;" onclick="openContactPicker()">👥 Rehberden Seç</button>
-        </div>
-        <input type="tel" id="compose-phone" placeholder="Örn: 05551234567" style="width:100%;">
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">Mesaj Metni</label>
-        <textarea id="compose-message" rows="4" placeholder="Mesajınızı yazın..." style="width:100%;"></textarea>
-      </div>
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button class="btn-primary" style="background:transparent; border:1px solid var(--border);" onclick="closeComposeModal()">İptal</button>
-        <button class="btn-primary" onclick="handleSendSms()">Gönder 🚀</button>
-      </div>
-    </div>
-  </div>
+      <div class="tabs" id="sheetTabs"></div>
 
-  <!-- REHBER MODALI -->
-  <div id="contact-picker-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h2>
-        <span>Rehberden Kişi Seç</span>
-        <button class="close-btn" onclick="closeContactPicker()">&times;</button>
-      </h2>
-      <input type="text" id="contact-search" placeholder="Kişilerde ara..." style="margin-bottom:12px; width:100%;" oninput="filterContacts(this.value)">
-      <div id="contact-list" style="overflow-y:auto; flex:1;"></div>
-    </div>
-  </div>
-
-  <!-- KATEGORİYE ATA MODALI -->
-  <div id="assign-category-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h2>
-        <span>Sekmeye Sabitle</span>
-        <button class="close-btn" onclick="closeAssignCategoryModal()">&times;</button>
-      </h2>
-      <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Seçilen göndericiler bu sekmeye bağlanacak ve sonraki tüm mesajları doğrudan bu sekmede listelenecektir.</p>
-      <div id="assign-category-list" style="display:flex; flex-direction:column; gap:8px;"></div>
-    </div>
-  </div>
-
-  <!-- SOHBET PENCERESİ -->
-  <div id="chat-view" class="chat-view">
-    <div class="chat-header">
-      <button class="chat-back-btn" onclick="closeChatView()">&larr;</button>
-      <div>
-        <div id="chat-title" style="font-weight:bold; font-size:0.95rem;">-</div>
-        <div id="chat-sub" style="font-size:0.75rem; color:var(--text-muted);">-</div>
+      <div class="table-wrap">
+        <table id="dataTable"></table>
       </div>
-    </div>
-    <div id="chat-body" class="chat-body"></div>
-    <div class="chat-footer">
-      <input type="text" id="chat-input" placeholder="Mesaj yaz..." onkeypress="if(event.key === 'Enter') sendReplySms()">
-      <button onclick="sendReplySms()">Gönder</button>
+
+      <div class="table-tools">
+        <button class="btn btn-sm" style="background:#3b82f6;" onclick="addRow()">➕ Satır Ekle</button>
+        <button class="btn btn-sm" style="background:#6366f1;" onclick="addColumn()">➕ Sütun Ekle</button>
+      </div>
+
+      <button class="btn btn-excel" onclick="exportToExcel()">
+        📥 Excel (.xlsx) Olarak Kaydet / Paylaş
+      </button>
     </div>
   </div>
 
   <script>
-    const STORAGE_KEY = "SMS_FILTER_RULES";
-    const contactCache = {};
-    let allContactsList = [];
-    let currentFilter = 'all'; // all, inbox, sent, unassigned
-    let currentSimFilter = 'all';
-    let currentMainTab = 'all';
-    let activeChatTarget = null;
-    let searchQuery = '';
-    const selectedMessages = new Set();
-    let detectedSims = [];
-    let onlyUnassigned = false;
-
-    let categories = [];
-
-    function getBridge() {
-      return window.AndroidBridge || null;
-    }
-
-    function initCategories() {
-      const bridge = getBridge();
-      if (bridge && bridge.getMessages) {
-        try {
-          const raw = bridge.getMessages("categories");
-          categories = JSON.parse(raw || "[]");
-        } catch(e) {
-          categories = [];
-        }
-      } else {
-        categories = JSON.parse(localStorage.getItem("CATEGORIES") || "[]");
-      }
-      renderTabsBar();
-      renderCategoryTags();
-    }
-
-    function saveCategories() {
-      const json = JSON.stringify(categories);
-      localStorage.setItem("CATEGORIES", json);
-      const bridge = getBridge();
-      if (bridge && bridge.saveStoreData) {
-        bridge.saveStoreData("categories", json);
-      }
-      renderTabsBar();
-      renderCategoryTags();
-    }
-
-    function createCategory() {
-      const input = document.getElementById('input-new-category');
-      const name = input.value.trim().toUpperCase();
-      if (!name) return;
-
-      if (!categories.find(c => c.name === name)) {
-        categories.push({ name: name, senders: [] });
-        saveCategories();
-      }
-      input.value = "";
-    }
-
-    function deleteCategory(name) {
-      if (!confirm(`'${name}' sekmesi kaldırılsın mı?`)) return;
-      categories = categories.filter(c => c.name !== name);
-      saveCategories();
-      if (currentMainTab === name) currentMainTab = 'all';
-      renderTabsBar();
-      loadAllMessages();
-    }
-
-    function renderCategoryTags() {
-      const container = document.getElementById('tags-categories');
-      container.innerHTML = categories.map(c => `
-        <div class="tag">
-          <span>📁 ${c.name} (${c.senders.length} gönderici)</span>
-          <span class="remove-btn" onclick="deleteCategory('${c.name}')">&times;</span>
-        </div>
-      `).join('');
-    }
-
-    function renderTabsBar() {
-      const bar = document.getElementById('main-tabs-bar');
-      let html = `
-        <button class="tab-btn ${currentMainTab === 'all' ? 'active' : ''}" onclick="switchCategoryTab('all')">Mesajlar</button>
-      `;
-
-      categories.forEach(c => {
-        html += `<button class="tab-btn ${currentMainTab === c.name ? 'active' : ''}" onclick="switchCategoryTab('${c.name}')">📁 ${c.name}</button>`;
-      });
-
-      html += `
-        <button class="tab-btn ${currentMainTab === 'rules' ? 'active' : ''}" onclick="switchCategoryTab('rules')">Kurallar</button>
-        <button class="tab-btn ${currentMainTab === 'spam' ? 'active' : ''}" onclick="switchCategoryTab('spam')">Spam / Karantina</button>
-      `;
-      bar.innerHTML = html;
-    }
-
-    function switchCategoryTab(tabName) {
-      currentMainTab = tabName;
-      renderTabsBar();
-      clearSelection();
-
-      document.querySelectorAll('.content .tab-pane').forEach(p => p.classList.remove('active'));
-
-      if (tabName === 'rules') {
-        document.getElementById('tab-rules').classList.add('active');
-      } else if (tabName === 'spam') {
-        document.getElementById('tab-spam').classList.add('active');
-        loadSpamMessages();
-      } else {
-        document.getElementById('tab-messages').classList.add('active');
-        loadAllMessages();
-      }
-    }
-
-    function getSenderCategory(sender) {
-      if (!sender) return null;
-      const upper = sender.toUpperCase();
-      for (let c of categories) {
-        if (c.senders.some(s => s.toUpperCase() === upper)) {
-          return c.name;
-        }
-      }
-      return null;
-    }
-
-    function toggleUnassignedFilter(checked) {
-      onlyUnassigned = checked;
-      loadAllMessages();
-    }
-
-    function openAssignCategoryModal() {
-      if (selectedMessages.size === 0) return;
-      if (categories.length === 0) {
-        alert("Önce Kurallar sekmesinden en az bir sekme (kategori) oluşturmalısınız.");
-        return;
-      }
-      const listDiv = document.getElementById('assign-category-list');
-      listDiv.innerHTML = categories.map(c => `
-        <button class="btn-primary" style="text-align:left; padding:12px; background:#1e293b;" onclick="assignSelectedToCategory('${c.name}')">
-          📁 ${c.name}
-        </button>
-      `).join('');
-      document.getElementById('assign-category-modal').classList.add('open');
-    }
-
-    function closeAssignCategoryModal() {
-      document.getElementById('assign-category-modal').classList.remove('open');
-    }
-
-    function assignSelectedToCategory(catName) {
-      const bridge = getBridge();
-      let allMsg = [];
-      if (bridge && bridge.getMessages) {
-        try {
-          const inb = JSON.parse(bridge.getMessages("inbox_messages") || "[]");
-          const snt = JSON.parse(bridge.getMessages("sent_messages") || "[]");
-          allMsg = [...inb, ...snt];
-        } catch(e) {}
-      }
-
-      const targetCategory = categories.find(c => c.name === catName);
-      if (!targetCategory) return;
-
-      selectedMessages.forEach(id => {
-        const found = allMsg.find(m => m.id === id);
-        if (found) {
-          const who = (found.sender || found.recipient || "").toUpperCase();
-          if (who && !targetCategory.senders.includes(who)) {
-            targetCategory.senders.push(who);
-          }
-        }
-      });
-
-      saveCategories();
-      closeAssignCategoryModal();
-      clearSelection();
-      alert(`Seçilen göndericiler '${catName}' sekmesine sabitlendi!`);
-      loadAllMessages();
-    }
-
-    function initSims() {
-      const bridge = getBridge();
-      if (bridge && bridge.getActiveSimSlots) {
-        try {
-          detectedSims = JSON.parse(bridge.getActiveSimSlots() || "[]");
-        } catch(e) {
-          detectedSims = [];
-        }
-      }
-      const select = document.getElementById('compose-sim-select');
-      if (detectedSims.length > 0) {
-        select.innerHTML = detectedSims.map(s => `
-          <option value="${s.subId}">SIM ${s.slotIndex} (${s.carrier})</option>
-        `).join('');
-      } else {
-        select.innerHTML = '<option value="0">Varsayılan SIM Kart</option>';
-      }
-    }
-
-    function resolveContact(sender) {
-      if (!sender) return { title: "Bilinmeyen", sub: "" };
-      const isPhone = /^(\+?[0-9\s\-()]+)$/.test(sender.trim());
-      if (!isPhone) return { title: sender, sub: "" };
-
-      if (contactCache[sender] !== undefined) {
-        return {
-          title: contactCache[sender] || sender,
-          sub: contactCache[sender] ? sender : ""
-        };
-      }
-
-      const bridge = getBridge();
-      if (bridge && bridge.getContactName) {
-        try {
-          const name = bridge.getContactName(sender);
-          contactCache[sender] = name || "";
-          if (name) return { title: name, sub: sender };
-        } catch(e) {}
-      }
-      return { title: sender, sub: "" };
-    }
-
-    function handleSearch(val) {
-      searchQuery = val.trim().toLowerCase();
-      loadAllMessages();
-      loadSpamMessages();
-    }
-
-    function openContactPicker() {
-      const bridge = getBridge();
-      if (bridge && bridge.getAllContacts) {
-        try {
-          allContactsList = JSON.parse(bridge.getAllContacts() || "[]");
-        } catch(e) {
-          allContactsList = [];
-        }
-      }
-      renderContacts(allContactsList);
-      document.getElementById('contact-picker-modal').classList.add('open');
-    }
-
-    function closeContactPicker() {
-      document.getElementById('contact-picker-modal').classList.remove('open');
-    }
-
-    function renderContacts(list) {
-      const cont = document.getElementById('contact-list');
-      if (!list || list.length === 0) {
-        cont.innerHTML = '<div class="empty-state">Rehber kaydı bulunamadı.</div>';
-        return;
-      }
-      cont.innerHTML = list.map(c => `
-        <div class="contact-item" onclick="selectContact('${c.phone}')">
-          <span style="font-weight:600;">${c.name}</span>
-          <span style="color:var(--text-muted); font-size:0.8rem;">${c.phone}</span>
-        </div>
-      `).join('');
-    }
-
-    function filterContacts(q) {
-      const query = q.toLowerCase();
-      const filtered = allContactsList.filter(c => 
-        c.name.toLowerCase().includes(query) || c.phone.includes(query)
-      );
-      renderContacts(filtered);
-    }
-
-    function selectContact(phone) {
-      document.getElementById('compose-phone').value = phone;
-      closeContactPicker();
-    }
-
-    function toggleSelectMessage(id, event) {
-      event.stopPropagation();
-      if (selectedMessages.has(id)) {
-        selectedMessages.delete(id);
-      } else {
-        selectedMessages.add(id);
-      }
-      updateSelectionToolbar();
-    }
-
-    function updateSelectionToolbar() {
-      const bar = document.getElementById('selection-bar');
-      const countLabel = document.getElementById('selected-count');
-      if (selectedMessages.size > 0) {
-        bar.classList.add('active');
-        countLabel.innerText = `${selectedMessages.size} mesaj seçildi`;
-      } else {
-        bar.classList.remove('active');
-      }
-    }
-
-    function clearSelection() {
-      selectedMessages.clear();
-      updateSelectionToolbar();
-      loadAllMessages();
-      loadSpamMessages();
-    }
-
-    function copySelectedBodies() {
-      if (selectedMessages.size === 0) return;
-      const bridge = getBridge();
-      let allMsg = [];
-      if (bridge && bridge.getMessages) {
-        try {
-          const inb = JSON.parse(bridge.getMessages("inbox_messages") || "[]");
-          const snt = JSON.parse(bridge.getMessages("sent_messages") || "[]");
-          const spm = JSON.parse(bridge.getMessages("spam_messages") || "[]");
-          allMsg = [...inb, ...snt, ...spm];
-        } catch(e) {}
-      }
-      const texts = allMsg.filter(m => selectedMessages.has(m.id)).map(m => m.body).join('\n---\n');
-      navigator.clipboard.writeText(texts).then(() => {
-        alert("Seçilen mesajlar kopyalandı!");
-        clearSelection();
-      });
-    }
-
-    function deleteSelectedMessages() {
-      if (selectedMessages.size === 0) return;
-      if (!confirm(`${selectedMessages.size} adet mesaj kalıcı olarak silinsin mi? (Bir daha geri gelmeyecek)`)) return;
-
-      const ids = Array.from(selectedMessages);
-      const bridge = getBridge();
-      if (bridge && bridge.deleteMessagesBulk) {
-        bridge.deleteMessagesBulk("inbox_messages", JSON.stringify(ids));
-        bridge.deleteMessagesBulk("sent_messages", JSON.stringify(ids));
-        bridge.deleteMessagesBulk("spam_messages", JSON.stringify(ids));
-      }
-      clearSelection();
-    }
-
-    function toggleMoveSelected() {
-      if (selectedMessages.size === 0) return;
-      const bridge = getBridge();
-      if (!bridge || !bridge.moveMessage) return;
-
-      const isSpamTab = currentMainTab === 'spam';
-      const fromKey = isSpamTab ? "spam_messages" : "inbox_messages";
-      const toKey = isSpamTab ? "inbox_messages" : "spam_messages";
-
-      selectedMessages.forEach(id => {
-        bridge.moveMessage(fromKey, toKey, id);
-      });
-
-      alert(`Mesajlar ${isSpamTab ? 'Gelen Kutusuna' : 'Karantinaya'} taşındı.`);
-      clearSelection();
-    }
-
-    function handleSyncDeviceSms() {
-      const bridge = getBridge();
-      if (bridge && bridge.syncDeviceSms) {
-        const count = bridge.syncDeviceSms();
-        alert(`${count} adet yeni SMS senkronize edildi.`);
-        loadAllMessages();
-      }
-    }
-
-    function switchSubTab(type) {
-      currentFilter = type;
-      const parent = event.currentTarget.parentElement;
-      parent.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-      loadAllMessages();
-    }
-
-    function switchSimFilter(sim) {
-      currentSimFilter = sim;
-      const parent = event.currentTarget.parentElement;
-      parent.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-      loadAllMessages();
-    }
-
-    function openComposeModal() {
-      initSims();
-      document.getElementById('compose-phone').value = "";
-      document.getElementById('compose-message').value = "";
-      document.getElementById('compose-modal').classList.add('open');
-    }
-
-    function closeComposeModal() {
-      document.getElementById('compose-modal').classList.remove('open');
-    }
-
-    function handleSendSms() {
-      const phone = document.getElementById('compose-phone').value.trim();
-      const message = document.getElementById('compose-message').value.trim();
-      const subId = parseInt(document.getElementById('compose-sim-select').value, 10) || 0;
-
-      if (!phone || !message) {
-        alert("Lütfen telefon numarası ve mesaj yazın.");
-        return;
-      }
-
-      const bridge = getBridge();
-      if (bridge && bridge.sendSms) {
-        bridge.sendSms(phone, message, subId);
-        closeComposeModal();
-        setTimeout(loadAllMessages, 300);
-      }
-    }
-
-    function openChatView(target) {
-      if (selectedMessages.size > 0) return;
-      activeChatTarget = target;
-      const display = resolveContact(target);
-      document.getElementById('chat-title').innerText = display.title;
-      document.getElementById('chat-sub').innerText = display.sub || target;
-      document.getElementById('chat-view').classList.add('open');
-      renderChatThread();
-    }
-
-    function closeChatView() {
-      activeChatTarget = null;
-      document.getElementById('chat-view').classList.remove('open');
-      loadAllMessages();
-    }
-
-    function sendReplySms() {
-      const input = document.getElementById('chat-input');
-      const text = input.value.trim();
-      if (!text || !activeChatTarget) return;
-
-      const bridge = getBridge();
-      if (bridge && bridge.sendSms) {
-        bridge.sendSms(activeChatTarget, text, 0);
-        input.value = "";
-        setTimeout(renderChatThread, 300);
-      }
-    }
-
-    function renderChatThread() {
-      if (!activeChatTarget) return;
-      const bridge = getBridge();
-      let inbox = [];
-      let sent = [];
-
-      if (bridge && bridge.getMessages) {
-        try {
-          inbox = JSON.parse(bridge.getMessages("inbox_messages") || "[]");
-          sent = JSON.parse(bridge.getMessages("sent_messages") || "[]");
-        } catch(e) {}
-      }
-
-      const thread = [];
-      inbox.forEach(m => {
-        if (m.sender === activeChatTarget) thread.push({ ...m, type: 'in' });
-      });
-      sent.forEach(m => {
-        if (m.recipient === activeChatTarget) thread.push({ ...m, type: 'out' });
-      });
-
-      thread.sort((a, b) => a.id - b.id);
-
-      const body = document.getElementById('chat-body');
-      if (thread.length === 0) {
-        body.innerHTML = '<div class="empty-state">Mesaj bulunmuyor.</div>';
-      } else {
-        body.innerHTML = thread.map(m => `
-          <div class="chat-bubble ${m.type}">
-            <div>${m.body}</div>
-            <div class="bubble-time">${m.simSlot ? `[${m.simSlot}] ` : ''}${m.date}</div>
-          </div>
-        `).join('');
-      }
-      body.scrollTop = body.scrollHeight;
-    }
-
-    function loadAllMessages() {
-      const bridge = getBridge();
-      let inbox = [];
-      let sent = [];
-
-      if (bridge && bridge.getMessages) {
-        try {
-          inbox = JSON.parse(bridge.getMessages("inbox_messages") || "[]").map(m => ({ ...m, kind: 'inbox', who: m.sender }));
-          sent = JSON.parse(bridge.getMessages("sent_messages") || "[]").map(m => ({ ...m, kind: 'sent', who: m.recipient }));
-        } catch(e) {}
-      }
-
-      let combined = [];
-      if (currentFilter === 'all') combined = [...inbox, ...sent];
-      else if (currentFilter === 'inbox') combined = inbox;
-      else if (currentFilter === 'sent') combined = sent;
-      else if (currentFilter === 'unassigned') combined = [...inbox, ...sent].filter(m => getSenderCategory(m.who) === null);
-
-      // Özel Dinamik Kategori Sekmesi Seçiliyse (Örn: BANKA)
-      if (currentMainTab !== 'all' && currentMainTab !== 'rules' && currentMainTab !== 'spam') {
-        const cat = categories.find(c => c.name === currentMainTab);
-        if (cat) {
-          const setSenders = new Set(cat.senders.map(s => s.toUpperCase()));
-          combined = combined.filter(m => setSenders.has((m.who || '').toUpperCase()));
-        }
-      }
-
-      // Atanmamışlar Checkbox Filtresi
-      if (onlyUnassigned && currentFilter !== 'unassigned') {
-        combined = combined.filter(m => getSenderCategory(m.who) === null);
-      }
-
-      // SIM Kart Filtresi
-      if (currentSimFilter !== 'all') {
-        combined = combined.filter(m => (m.simSlot || 'SIM 1') === currentSimFilter);
-      }
-
-      // Arama Filtresi
-      if (searchQuery) {
-        combined = combined.filter(m => {
-          const disp = resolveContact(m.who);
-          return m.body.toLowerCase().includes(searchQuery) ||
-                 m.who.toLowerCase().includes(searchQuery) ||
-                 disp.title.toLowerCase().includes(searchQuery);
-        });
-      }
-
-      combined.sort((a, b) => b.id - a.id);
-
-      // Atanmamış mesaj sayısını hesaplayıp etikete yaz
-      const totalUnassigned = [...inbox, ...sent].filter(m => getSenderCategory(m.who) === null).length;
-      const badge = document.getElementById('unassigned-badge-count');
-      if (badge) badge.innerText = totalUnassigned > 0 ? `(${totalUnassigned} atanmamış)` : '';
-
-      const container = document.getElementById('messages-list');
-      if (combined.length === 0) {
-        container.innerHTML = '<div class="empty-state">Bu sekmede eşleşen mesaj bulunamadı.</div>';
-        return;
-      }
-
-      container.innerHTML = combined.map(m => {
-        const display = resolveContact(m.who);
-        const isSent = m.kind === 'sent';
-        const isChecked = selectedMessages.has(m.id) ? 'checked' : '';
-        const simTag = m.simSlot || 'SIM 1';
-        const simBadgeClass = simTag === 'SIM 2' ? 'sim-2' : 'sim-1';
-        const assignedCat = getSenderCategory(m.who);
-
-        return `
-          <div class="sms-item ${m.kind}" onclick="openChatView('${m.who}')">
-            <input type="checkbox" class="sms-checkbox" ${isChecked} onclick="toggleSelectMessage(${m.id}, event)">
-            <div class="sms-content-wrap">
-              <div class="sms-header">
-                <span class="sms-sender">
-                  ${isSent ? '📤 Kime: ' : ''}${display.title}
-                  ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
-                  ${assignedCat ? `<span class="category-badge">📁 ${assignedCat}</span>` : ''}
-                  <span class="sim-badge ${simBadgeClass}">${simTag}</span>
-                </span>
-                <span class="sms-date">${m.date}</span>
-              </div>
-              <div class="sms-body">${m.body}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function loadSpamMessages() {
-      const bridge = getBridge();
-      let spamList = [];
-      if (bridge && bridge.getMessages) {
-        try {
-          spamList = JSON.parse(bridge.getMessages("spam_messages") || "[]");
-        } catch(e) {}
-      }
-
-      if (searchQuery) {
-        spamList = spamList.filter(m => {
-          const disp = resolveContact(m.sender);
-          return m.body.toLowerCase().includes(searchQuery) ||
-                 m.sender.toLowerCase().includes(searchQuery) ||
-                 disp.title.toLowerCase().includes(searchQuery);
-        });
-      }
-
-      const container = document.getElementById('spam-list');
-      if (spamList.length === 0) {
-        container.innerHTML = '<div class="empty-state">Karantinada eşleşen mesaj bulunmuyor.</div>';
-        return;
-      }
-
-      container.innerHTML = spamList.slice().reverse().map(m => {
-        const display = resolveContact(m.sender);
-        const isChecked = selectedMessages.has(m.id) ? 'checked' : '';
-        const simTag = m.simSlot || 'SIM 1';
-        const simBadgeClass = simTag === 'SIM 2' ? 'sim-2' : 'sim-1';
-
-        return `
-          <div class="sms-item spam">
-            <input type="checkbox" class="sms-checkbox" ${isChecked} onclick="toggleSelectMessage(${m.id}, event)">
-            <div class="sms-content-wrap">
-              <div class="sms-header">
-                <span class="sms-sender">
-                  ${display.title}
-                  ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
-                  <span class="sim-badge ${simBadgeClass}">${simTag}</span>
-                </span>
-                <span class="sms-date">${m.date}</span>
-              </div>
-              <div class="sms-body">${m.body}</div>
-              <div class="sms-reason">🚨 ${m.reason}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function clearSpam() {
-      if (confirm("Karantinadaki tüm mesajlar silinsin mi?")) {
-        const bridge = getBridge();
-        if (bridge && bridge.clearMessages) {
-          bridge.clearMessages("spam_messages");
-          loadSpamMessages();
-        }
-      }
-    }
-
-    function loadRules() {
-      const bridge = getBridge();
-      if (bridge && bridge.getMessages) {
-        try {
-          const rules = bridge.getMessages("rules");
-          if (rules && rules !== "[]") return JSON.parse(rules);
-        } catch(e) {}
-      }
-      const local = localStorage.getItem(STORAGE_KEY);
-      return local ? JSON.parse(local) : { titles: ["BAHIS", "BET", "KASINO"], bcodes: ["B214", "B002"] };
-    }
-
-    function saveRules(rules) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(rules));
-      const bridge = getBridge();
-      if (bridge && bridge.saveStoreData) {
-        bridge.saveStoreData("rules", JSON.stringify(rules));
-      }
-      renderRules();
-    }
-
-    function addRule(type) {
-      const input = document.getElementById(type === 'titles' ? 'input-title' : 'input-bcode');
-      const val = input.value.trim().toUpperCase();
-      if (!val) return;
-      const rules = loadRules();
-      if (!rules[type].includes(val)) {
-        rules[type].push(val);
-        saveRules(rules);
-      }
-      input.value = "";
-    }
-
-    function removeRule(type, val) {
-      const rules = loadRules();
-      rules[type] = rules[type].filter(item => item !== val);
-      saveRules(rules);
-    }
-
-    function renderRules() {
-      const rules = loadRules();
-      ['titles', 'bcodes'].forEach(type => {
-        const container = document.getElementById(`tags-${type}`);
-        container.innerHTML = rules[type].map(item => `
-          <div class="tag">
-            <span>${item}</span>
-            <span class="remove-btn" onclick="removeRule('${type}', '${item}')">&times;</span>
-          </div>
-        `).join('');
-      });
-    }
+    // Yüklü görüntü sayfaları: [{ name: "Sayfa 1", base64: "...", mimeType: "image/jpeg" }]
+    let loadedPages = [];
+    // Okunan tablolar: [{ sheetName: "Sayfa 1", headers: [...], rows: [[...]] }]
+    let parsedSheets = [];
+    let activeSheetIndex = 0;
 
     window.addEventListener('DOMContentLoaded', () => {
-      initCategories();
-      renderRules();
-      initSims();
-      
-      const bridge = getBridge();
-      if (bridge && bridge.syncDeviceSms) {
-        try { bridge.syncDeviceSms(); } catch(e) {}
+      const savedKey = localStorage.getItem('gemini_api_key') || '';
+      const savedModel = localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
+      document.getElementById('apiKeyInput').value = savedKey;
+      document.getElementById('modelInput').value = savedModel;
+      if (!savedKey) {
+        document.getElementById('settingsPanel').style.display = 'block';
+      }
+    });
+
+    function toggleSettings() {
+      const panel = document.getElementById('settingsPanel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function saveSettings() {
+      const key = document.getElementById('apiKeyInput').value.trim();
+      const model = document.getElementById('modelInput').value;
+      if (!key) {
+        alert('Lütfen geçerli bir Gemini API anahtarı girin.');
+        return;
+      }
+      localStorage.setItem('gemini_api_key', key);
+      localStorage.setItem('gemini_model', model);
+      document.getElementById('settingsPanel').style.display = 'none';
+      alert('API ayarları kaydedildi.');
+    }
+
+    function showStatus(msg, isLoading = true) {
+      const box = document.getElementById('statusBox');
+      const spin = document.getElementById('statusSpinner');
+      const txt = document.getElementById('statusText');
+      box.style.display = 'flex';
+      spin.style.display = isLoading ? 'block' : 'none';
+      txt.innerText = msg;
+    }
+
+    function hideStatus() {
+      document.getElementById('statusBox').style.display = 'none';
+    }
+
+    function clearImages() {
+      loadedPages = [];
+      document.getElementById('previewList').innerHTML = '';
+      document.getElementById('previewArea').style.display = 'none';
+      document.getElementById('cameraInput').value = '';
+      document.getElementById('fileInput').value = '';
+    }
+
+    // Dosya veya Kamera Seçildiğinde Çalışır
+    async function handleFiles(fileList) {
+      if (!fileList || fileList.length === 0) return;
+      showStatus('Dosyalar okunuyor ve görüntüye dönüştürülüyor...', true);
+
+      try {
+        for (let i = 0; i < fileList.length; i++) {
+          const file = fileList[i];
+          const ext = file.name.toLowerCase();
+          if (ext.endsWith('.tif') || ext.endsWith('.tiff') || file.type === 'image/tiff') {
+            await decodeTiffFile(file);
+          } else {
+            await decodeStandardImage(file);
+          }
+        }
+        renderPreviews();
+        hideStatus();
+      } catch (err) {
+        console.error(err);
+        showStatus('Dosya okuma hatası: ' + err.message, false);
+      }
+    }
+
+    // TIFF Dosyasını (Tek veya Çok Sayfalı) RAM'de Çözüp JPEG Base64'e Çevirir
+    async function decodeTiffFile(file) {
+      const buffer = await file.arrayBuffer();
+      const ifds = UTIF.decode(buffer);
+      if (!ifds || ifds.length === 0) throw new Error('TIFF içeriği çözümlenemedi.');
+
+      for (let i = 0; i < ifds.length; i++) {
+        UTIF.decodeImage(buffer, ifds[i]);
+        const rgba = UTIF.toRGBA8(ifds[i]);
+        const width = ifds[i].width;
+        const height = ifds[i].height;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        const imgData = ctx.createImageData(width, height);
+        imgData.data.set(rgba);
+        ctx.putImageData(imgData, 0, 0);
+
+        // Çok yüksek çözünürlük varsa API hızı için optimize et (Max 2200px)
+        const finalDataUrl = resizeCanvasIfNeeded(canvas, 2200);
+        loadedPages.push({
+          name: `TIFF S.${loadedPages.length + 1}`,
+          dataUrl: finalDataUrl,
+          base64: finalDataUrl.split(',')[1],
+          mimeType: 'image/jpeg'
+        });
+      }
+    }
+
+    // Standart JPG/PNG Fotoğrafları Optimize Edip Base64'e Çevirir
+    function decodeStandardImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const finalDataUrl = resizeCanvasIfNeeded(canvas, 2200);
+            loadedPages.push({
+              name: `Sayfa ${loadedPages.length + 1}`,
+              dataUrl: finalDataUrl,
+              base64: finalDataUrl.split(',')[1],
+              mimeType: 'image/jpeg'
+            });
+            resolve();
+          };
+          img.onerror = () => reject(new Error('Görüntü yüklenemedi.'));
+          img.src = e.target.result;
+        };
+        reader.onerror = () => reject(new Error('Dosya okunamadı.'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function resizeCanvasIfNeeded(sourceCanvas, maxDim) {
+      let w = sourceCanvas.width;
+      let h = sourceCanvas.height;
+      if (w <= maxDim && h <= maxDim) {
+        return sourceCanvas.toDataURL('image/jpeg', 0.88);
+      }
+      if (w > h) {
+        h = Math.round((h * maxDim) / w);
+        w = maxDim;
+      } else {
+        w = Math.round((w * maxDim) / h);
+        h = maxDim;
+      }
+      const out = document.createElement('canvas');
+      out.width = w;
+      out.height = h;
+      const ctx = out.getContext('2d');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(sourceCanvas, 0, 0, w, h);
+      return out.toDataURL('image/jpeg', 0.88);
+    }
+
+    function renderPreviews() {
+      const area = document.getElementById('previewArea');
+      const list = document.getElementById('previewList');
+      const countTxt = document.getElementById('pageCountText');
+
+      if (loadedPages.length === 0) {
+        area.style.display = 'none';
+        return;
+      }
+      area.style.display = 'block';
+      countTxt.innerText = `Hazır Sayfa Sayısı: ${loadedPages.length}`;
+      list.innerHTML = loadedPages.map((p, idx) => `
+        <div class="preview-item">
+          <img src="${p.dataUrl}" alt="${p.name}">
+          <div class="preview-badge">${idx + 1}. ${p.name}</div>
+        </div>
+      `).join('');
+    }
+
+    // Gemini API ile Tabloları Analiz Et
+    async function analyzeImages() {
+      const apiKey = localStorage.getItem('gemini_api_key');
+      const model = localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
+
+      if (!apiKey) {
+        document.getElementById('settingsPanel').style.display = 'block';
+        alert('Lütfen önce Gemini API Anahtarınızı girip kaydedin.');
+        return;
+      }
+      if (loadedPages.length === 0) return;
+
+      const btn = document.getElementById('analyzeBtn');
+      btn.disabled = true;
+      parsedSheets = [];
+
+      const systemPrompt = `Sen uzman bir veri ve finansal tablo okuma motorusun.
+Gönderilen görüntüdeki tabloyu veya listeyi hiçbir satır ve sütunu atlamadan eksiksiz oku.
+Kurallar:
+1. Sadece geçerli bir JSON objesi döndür.
+2. Hücre birleştirmeleri varsa alt/yan hücrelere mantıklı şekilde dağıt.
+3. Sayıları, tarihleri, tutarları ve metinleri gördüğün gibi koru.
+4. JSON formatı kesinlikle şöyle olmalıdır:
+{
+  "headers": ["Sütun 1", "Sütun 2", "Sütun 3"],
+  "rows": [
+    ["Değer 1A", "Değer 1B", "Değer 1C"],
+    ["Değer 2A", "Değer 2B", "Değer 2C"]
+  ]
+}`;
+
+      try {
+        for (let i = 0; i < loadedPages.length; i++) {
+          const page = loadedPages[i];
+          showStatus(`${i + 1} / ${loadedPages.length} (${page.name}) Gemini Vision ile okunuyor...`, true);
+
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: systemPrompt },
+                  { inline_data: { mime_type: page.mimeType, data: page.base64 } }
+                ]
+              }],
+              generationConfig: {
+                temperature: 0.1,
+                responseMimeType: "application/json"
+              }
+            })
+          });
+
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error?.message || `API Hatası (${response.status})`);
+          }
+
+          const result = await response.json();
+          let rawText = result.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+          rawText = rawText.replace(/```json|```/g, '').trim();
+          const parsed = JSON.parse(rawText);
+
+          const headers = Array.isArray(parsed.headers) && parsed.headers.length > 0
+            ? parsed.headers.map(String)
+            : ['Sütun 1'];
+          const rows = Array.isArray(parsed.rows)
+            ? parsed.rows.map(r => Array.isArray(r) ? r.map(c => c == null ? '' : String(c)) : [])
+            : [];
+
+          parsedSheets.push({
+            sheetName: `Sayfa_${i + 1}`,
+            headers: headers,
+            rows: rows
+          });
+        }
+
+        activeSheetIndex = 0;
+        renderResultSection();
+        showStatus('✅ Tüm sayfalar başarıyla tabloya dönüştürüldü!', false);
+      } catch (err) {
+        console.error(err);
+        showStatus('❌ Hata: ' + err.message, false);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function renderResultSection() {
+      if (parsedSheets.length === 0) return;
+      document.getElementById('resultCard').style.display = 'block';
+
+      const tabsEl = document.getElementById('sheetTabs');
+      tabsEl.innerHTML = parsedSheets.map((s, idx) => `
+        <button class="tab-btn ${idx === activeSheetIndex ? 'active' : ''}" onclick="switchSheet(${idx})">
+          📄 ${s.sheetName} (${s.rows.length} Satır)
+        </button>
+      `).join('');
+
+      renderActiveTable();
+    }
+
+    function switchSheet(idx) {
+      syncDomToState();
+      activeSheetIndex = idx;
+      renderResultSection();
+    }
+
+    function renderActiveTable() {
+      const sheet = parsedSheets[activeSheetIndex];
+      const table = document.getElementById('dataTable');
+      const colCount = Math.max(
+        sheet.headers.length,
+        ...sheet.rows.map(r => r.length),
+        1
+      );
+
+      // Başlıkları colCount'a tamamla
+      while (sheet.headers.length < colCount) {
+        sheet.headers.push(`Sütun ${sheet.headers.length + 1}`);
       }
 
-      loadAllMessages();
-    });
+      let html = '<thead><tr><th class="del-col">#</th>';
+      sheet.headers.forEach((h, cIdx) => {
+        html += `<th contenteditable="true" data-col="${cIdx}">${escapeHtml(h)}</th>`;
+      });
+      html += '</tr></thead><tbody>';
+
+      sheet.rows.forEach((row, rIdx) => {
+        html += `<tr><td class="del-col"><button class="del-row-btn" onclick="deleteRow(${rIdx})">×</button></td>`;
+        for (let cIdx = 0; cIdx < colCount; cIdx++) {
+          const val = row[cIdx] !== undefined ? row[cIdx] : '';
+          html += `<td contenteditable="true" data-row="${rIdx}" data-col="${cIdx}">${escapeHtml(val)}</td>`;
+        }
+        html += '</tr>';
+      });
+      html += '</tbody>';
+      table.innerHTML = html;
+    }
+
+    // Ekranda elle yapılan düzeltmeleri hafızaya kaydet
+    function syncDomToState() {
+      const sheet = parsedSheets[activeSheetIndex];
+      if (!sheet) return;
+      const table = document.getElementById('dataTable');
+
+      const ths = table.querySelectorAll('thead th[contenteditable="true"]');
+      if (ths.length > 0) {
+        sheet.headers = Array.from(ths).map(th => th.innerText.trim());
+      }
+
+      const trs = table.querySelectorAll('tbody tr');
+      sheet.rows = Array.from(trs).map(tr => {
+        const tds = tr.querySelectorAll('td[contenteditable="true"]');
+        return Array.from(tds).map(td => td.innerText.trim());
+      });
+    }
+
+    function deleteRow(rIdx) {
+      syncDomToState();
+      parsedSheets[activeSheetIndex].rows.splice(rIdx, 1);
+      renderResultSection();
+    }
+
+    function addRow() {
+      syncDomToState();
+      const sheet = parsedSheets[activeSheetIndex];
+      const emptyRow = new Array(sheet.headers.length).fill('');
+      sheet.rows.push(emptyRow);
+      renderActiveTable();
+    }
+
+    function addColumn() {
+      syncDomToState();
+      const sheet = parsedSheets[activeSheetIndex];
+      sheet.headers.push(`Sütun ${sheet.headers.length + 1}`);
+      sheet.rows.forEach(r => r.push(''));
+      renderActiveTable();
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    // Excel (.xlsx) Üret ve Capacitor / Tarayıcı Üzerinden Kaydet-Paylaş
+    async function exportToExcel() {
+      syncDomToState();
+      if (parsedSheets.length === 0) return;
+
+      try {
+        showStatus('Excel (.xlsx) dosyası hazırlanıyor...', true);
+        const wb = XLSX.utils.book_new();
+
+        parsedSheets.forEach((sheet, idx) => {
+          const aoa = [sheet.headers, ...sheet.rows];
+          const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+          // Sütun genişliklerini otomatik ayarla
+          const colWidths = sheet.headers.map((h, cIdx) => {
+            let maxLen = h ? h.length : 10;
+            sheet.rows.forEach(r => {
+              const cellLen = r[cIdx] ? String(r[cIdx]).length : 0;
+              if (cellLen > maxLen) maxLen = cellLen;
+            });
+            return { wch: Math.min(Math.max(maxLen + 3, 10), 45) };
+          });
+          ws['!cols'] = colWidths;
+
+          const safeName = (sheet.sheetName || `Sayfa_${idx + 1}`).substring(0, 31);
+          XLSX.utils.book_append_sheet(wb, ws, safeName);
+        });
+
+        const now = new Date();
+        const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+        const fileName = `Tablo_${stamp}.xlsx`;
+
+        // Capacitor APK İçinde Çalışıyorsa Filesystem + Share Kullan
+        if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+          const wbBase64 = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+          const Filesystem = window.Capacitor.Plugins.Filesystem;
+          const Share = window.Capacitor.Plugins.Share;
+
+          const savedFile = await Filesystem.writeFile({
+            path: fileName,
+            data: wbBase64,
+            directory: 'CACHE'
+          });
+
+          hideStatus();
+          await Share.share({
+            title: 'Excel Tablosu',
+            text: fileName,
+            url: savedFile.uri,
+            dialogTitle: 'Excel Dosyasını Kaydet veya Paylaş'
+          });
+        } else {
+          // Normal Tarayıcıda Açıldıysa Doğrudan İndir
+          XLSX.writeFile(wb, fileName);
+          showStatus(`✅ ${fileName} indirildi.`, false);
+        }
+      } catch (err) {
+        console.error(err);
+        showStatus('❌ Excel aktarım hatası: ' + err.message, false);
+      }
+    }
   </script>
 </body>
 </html>
