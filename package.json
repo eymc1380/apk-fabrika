@@ -1,7 +1,7 @@
 {
-  "name": "apk-fabrika",
+  "name": "ymc-store",
   "version": "1.0.0",
-  "description": "Otomatik APK Derleyici",
+  "description": "YMC Store - Google Drive Baglantili Ozel Android Uygulama Magazasi",
   "dependencies": {
     "@capacitor/android": "^6.0.0",
     "@capacitor/cli": "^6.0.0",

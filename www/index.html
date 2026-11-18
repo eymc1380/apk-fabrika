@@ -1,1418 +1,493 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SMS Mesajlar</title>
-  <style>
-    :root {
-      --bg: #0b0f19;
-      --card-bg: #161e2e;
-      --border: #243046;
-      --text: #f3f4f6;
-      --text-muted: #9ca3af;
-      --primary: #0284c7;
-      --primary-hover: #0369a1;
-      --danger: #ef4444;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --bubble-in: #1e293b;
-      --bubble-out: #0369a1;
-      --sim1: #3b82f6;
-      --sim2: #ec4899;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-
-    .header {
-      background-color: #0d1527;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .header h1 {
-      margin: 0;
-      font-size: 1.05rem;
-      font-weight: 600;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .btn-sync {
-      background: #1e293b;
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      cursor: pointer;
-    }
-
-    .search-box-wrapper {
-      padding: 10px 14px 6px 14px;
-      background: #0d1527;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .search-box {
-      width: 100%;
-      background: #0b0f19;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 20px;
-      box-sizing: border-box;
-      outline: none;
-      font-size: 0.85rem;
-    }
-
-    .selection-toolbar {
-      display: none;
-      background: #1e293b;
-      padding: 10px 16px;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 2px solid var(--primary);
-    }
-
-    .selection-toolbar.active {
-      display: flex;
-    }
-
-    .selection-toolbar-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .btn-action {
-      background: #0f172a;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      cursor: pointer;
-    }
-
-    .tabs-wrapper {
-      display: flex;
-      background: #111827;
-      border-bottom: 1px solid var(--border);
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-
-    .tab-btn {
-      padding: 12px 16px;
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      white-space: nowrap;
-    }
-
-    .tab-btn.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
-    }
-
-    .content {
-      padding: 14px;
-      padding-bottom: 80px;
-    }
-
-    .tab-pane {
-      display: none;
-    }
-
-    .tab-pane.active {
-      display: block;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px;
-      margin-bottom: 12px;
-    }
-
-    .filters-row {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .filter-group {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 2px;
-    }
-
-    .sub-tab-btn {
-      padding: 5px 12px;
-      border-radius: 16px;
-      background: #1e293b;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .sub-tab-btn.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-    }
-
-    .sub-tab-btn.sim1.active {
-      background: var(--sim1);
-      border-color: var(--sim1);
-    }
-
-    .sub-tab-btn.sim2.active {
-      background: var(--sim2);
-      border-color: var(--sim2);
-    }
-
-    .sms-item {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 14px;
-      margin-bottom: 10px;
-      cursor: pointer;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .sms-item.inbox {
-      border-left: 4px solid var(--success);
-    }
-
-    .sms-item.sent {
-      border-left: 4px solid var(--primary);
-    }
-
-    .sms-item.spam {
-      border-left: 4px solid var(--danger);
-    }
-
-    .sms-checkbox {
-      margin-top: 4px;
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      accent-color: var(--primary);
-    }
-
-    .sms-content-wrap {
-      flex: 1;
-    }
-
-    .sms-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
-    .sms-sender {
-      font-weight: bold;
-      font-size: 0.95rem;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .sms-sender .sender-sub {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      font-weight: normal;
-    }
-
-    .category-badge {
-      font-size: 0.65rem;
-      background: rgba(245, 158, 11, 0.2);
-      color: var(--warning);
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: bold;
-    }
-
-    .sim-badge {
-      font-size: 0.65rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-
-    .sim-badge.sim-1 {
-      background: rgba(59, 130, 246, 0.2);
-      color: #60a5fa;
-      border: 1px solid rgba(59, 130, 246, 0.4);
-    }
-
-    .sim-badge.sim-2 {
-      background: rgba(236, 72, 153, 0.2);
-      color: #f472b6;
-      border: 1px solid rgba(236, 72, 153, 0.4);
-    }
-
-    .sms-date {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .sms-body {
-      font-size: 0.88rem;
-      color: #d1d5db;
-      line-height: 1.4;
-      word-break: break-word;
-    }
-
-    .sms-reason {
-      margin-top: 8px;
-      font-size: 0.75rem;
-      color: var(--danger);
-      background: rgba(239, 68, 68, 0.1);
-      padding: 4px 8px;
-      border-radius: 4px;
-      display: inline-block;
-    }
-
-    .empty-state {
-      text-align: center;
-      color: var(--text-muted);
-      padding: 40px 10px;
-      font-size: 0.9rem;
-    }
-
-    .input-group {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-
-    input[type="text"], input[type="tel"], textarea, select {
-      flex: 1;
-      background: #0f172a;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 10px;
-      border-radius: 6px;
-      outline: none;
-      font-size: 0.9rem;
-      box-sizing: border-box;
-      font-family: inherit;
-    }
-
-    button.btn-primary {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    button.btn-danger {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--danger);
-      border: 1px solid var(--danger);
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .tag-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 16px;
-    }
-
-    .tag {
-      background: #1e293b;
-      border: 1px solid var(--border);
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .tag .remove-btn {
-      color: var(--danger);
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .fab-btn {
-      position: fixed;
-      right: 20px;
-      bottom: 24px;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background-color: var(--primary);
-      color: #ffffff;
-      border: none;
-      font-size: 26px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-      cursor: pointer;
-      z-index: 100;
-    }
-
-    .chat-view {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--bg);
-      z-index: 300;
-      display: none;
-      flex-direction: column;
-    }
-
-    .chat-view.open {
-      display: flex;
-    }
-
-    .chat-header {
-      background: #0d1527;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .chat-back-btn {
-      background: none;
-      border: none;
-      color: var(--text);
-      font-size: 1.4rem;
-      cursor: pointer;
-    }
-
-    .chat-body {
-      flex: 1;
-      padding: 16px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .chat-bubble {
-      max-width: 80%;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 0.9rem;
-      line-height: 1.4;
-      word-break: break-word;
-    }
-
-    .chat-bubble.in {
-      align-self: flex-start;
-      background: var(--bubble-in);
-      border-bottom-left-radius: 2px;
-    }
-
-    .chat-bubble.out {
-      align-self: flex-end;
-      background: var(--bubble-out);
-      color: #fff;
-      border-bottom-right-radius: 2px;
-    }
-
-    .bubble-time {
-      font-size: 0.68rem;
-      color: rgba(255, 255, 255, 0.6);
-      margin-top: 4px;
-      text-align: right;
-    }
-
-    .chat-footer {
-      background: #0d1527;
-      padding: 10px 12px;
-      display: flex;
-      gap: 8px;
-      border-top: 1px solid var(--border);
-    }
-
-    .chat-footer input {
-      flex: 1;
-      background: #161e2e;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 10px 14px;
-      border-radius: 20px;
-      outline: none;
-    }
-
-    .chat-footer button {
-      background: var(--primary);
-      border: none;
-      color: #fff;
-      padding: 0 16px;
-      border-radius: 20px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(3px);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      box-sizing: border-box;
-    }
-
-    .modal-overlay.open {
-      display: flex;
-    }
-
-    .modal-card {
-      background-color: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      width: 100%;
-      max-width: 420px;
-      max-height: 85vh;
-      display: flex;
-      flex-direction: column;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    .modal-card h2 {
-      margin: 0 0 14px 0;
-      font-size: 1.1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .modal-card .close-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 1.4rem;
-      cursor: pointer;
-    }
-
-    .contact-item {
-      padding: 10px;
-      border-bottom: 1px solid var(--border);
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .contact-item:hover {
-      background: #1e293b;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>YMC Store</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
-  <div class="header">
-    <div class="header-left">
-      <h1>💬 Mesajlar</h1>
-    </div>
-    <div class="header-actions">
-      <button class="btn-sync" onclick="handleSyncDeviceSms()" title="Telefon hafızasındaki yeni SMS'leri senkronize et">🔄 Senkronize</button>
-    </div>
-  </div>
-
-  <!-- ARAMA BARI VE ATANMAMIŞLAR KUTUSU -->
-  <div class="search-box-wrapper">
-    <input type="text" id="sms-search" class="search-box" placeholder="🔍 Mesajlarda, numaralarda veya kişilerde ara..." oninput="handleSearch(this.value)">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding: 0 4px;">
-      <label style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: pointer;">
-        <input type="checkbox" id="chk-unassigned-only" onchange="toggleUnassignedFilter(this.checked)" style="width: 14px; height: 14px; accent-color: var(--warning);">
-        <span>Yalnızca sekmeye atanmamış SMS'leri göster</span>
-      </label>
-      <span id="unassigned-badge-count" style="font-size: 0.7rem; color: var(--warning); font-weight: bold;"></span>
-    </div>
-  </div>
-
-  <!-- ÇOKLU SEÇİM EYLEM BARI -->
-  <div id="selection-bar" class="selection-toolbar">
-    <span id="selected-count" style="font-size: 0.85rem; font-weight: bold;">0 seçildi</span>
-    <div class="selection-toolbar-actions">
-      <button class="btn-action" onclick="openAssignCategoryModal()" title="Kategoriye Ata">📁 Sekmeye Ata</button>
-      <button class="btn-action" onclick="copySelectedBodies()" title="Metinleri Kopyala">📋 Kopyala</button>
-      <button class="btn-action" onclick="toggleMoveSelected()" title="Karantinaya Taşı / Güvene Al">⇄ Taşı</button>
-      <button class="btn-action" style="color:var(--danger);" onclick="deleteSelectedMessages()" title="Seçilenleri Sil">🗑️ Sil</button>
-      <button class="btn-action" onclick="clearSelection()">İptal</button>
-    </div>
-  </div>
-
-  <!-- DİNAMİK ÜST SEKMELER -->
-  <div class="tabs-wrapper" id="main-tabs-bar"></div>
-
-  <div class="content">
-    <div id="tab-messages" class="tab-pane active">
-      <div class="filters-row">
-        <div class="filter-group">
-          <button class="sub-tab-btn active" onclick="switchSubTab('all')">Tüm Akış</button>
-          <button class="sub-tab-btn" onclick="switchSubTab('inbox')">Gelenler</button>
-          <button class="sub-tab-btn" onclick="switchSubTab('sent')">Gidenler</button>
-          <button class="sub-tab-btn" id="btn-sub-unassigned" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.4);" onclick="switchSubTab('unassigned')">📂 Atanmamışlar</button>
+  <!-- ==================== 1. OTURUM / GİRİŞ EKRANI ==================== -->
+  <section id="auth-view" class="auth-screen">
+    <div class="auth-card">
+      <div class="brand-hero">
+        <div class="brand-logo-badge" aria-hidden="true">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+            <path d="M6 4.5L19.5 12L6 19.5V4.5Z" fill="#ffffff" />
+          </svg>
         </div>
-        <div class="filter-group" id="sim-filter-group">
-          <button class="sub-tab-btn active" onclick="switchSimFilter('all')">Tüm Hatlar</button>
-          <button class="sub-tab-btn sim1" onclick="switchSimFilter('SIM 1')">SIM 1</button>
-          <button class="sub-tab-btn sim2" onclick="switchSimFilter('SIM 2')">SIM 2</button>
+        <h1 id="auth-store-title">YMC Store</h1>
+        <p id="auth-store-subtitle">Özel Android Uygulama Mağazası</p>
+      </div>
+
+      <div id="setup-banner" class="setup-alert-pill hidden" role="button" tabindex="0">
+        <span>⚠️ Apps Script URL henüz bağlanmadı. Dokun ve ayarla</span>
+        <span>Ayarla &rarr;</span>
+      </div>
+
+      <button id="btn-google-login" class="btn-google" type="button">
+        <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.9z"/>
+          <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+          <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+          <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.7-.4-3.9z"/>
+        </svg>
+        <span>Google ile Devam Et</span>
+      </button>
+
+      <div class="auth-divider"><span>veya e-posta ile</span></div>
+
+      <div class="segmented-tabs">
+        <button id="tab-btn-login" class="segmented-btn active" type="button">Giriş Yap</button>
+        <button id="tab-btn-register" class="segmented-btn" type="button">Üye Ol</button>
+      </div>
+
+      <form id="auth-form">
+        <div id="auth-name-group" class="form-group hidden">
+          <label for="auth-name">Ad Soyad</label>
+          <input id="auth-name" class="form-input" type="text" placeholder="Örn: Ahmet Yılmaz" autocomplete="name" />
         </div>
-      </div>
-      <div id="messages-list"></div>
-    </div>
 
-    <!-- KURALLAR SEKMESİ -->
-    <div id="tab-rules" class="tab-pane">
-      <div class="card">
-        <h3>Özel Sekmeler (Kategoriler)</h3>
-        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Örn: BANKA, AİLE, İŞ. Sekmeyi açıp gelen mesajları bu sekmeye bağlayabilirsiniz.</p>
-        <div class="input-group">
-          <input type="text" id="input-new-category" placeholder="Yeni Sekme Adı (Örn: BANKA)">
-          <button class="btn-primary" onclick="createCategory()">Sekme Oluştur</button>
+        <div class="form-group">
+          <label for="auth-email">E-posta Adresi</label>
+          <input id="auth-email" class="form-input" type="email" placeholder="ornek@gmail.com" autocomplete="email" required />
         </div>
-        <div id="tags-categories" class="tag-container"></div>
-      </div>
 
-      <div class="card">
-        <h3>Başlık Engelleme (Karantina)</h3>
-        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Gönderici adı bu kelimelerden biriyle eşleşirse karantinaya alınır.</p>
-        <div class="input-group">
-          <input type="text" id="input-title" placeholder="Örn: BAHIS, KUMAR">
-          <button class="btn-primary" onclick="addRule('titles')">Ekle</button>
-        </div>
-        <div id="tags-titles" class="tag-container"></div>
-      </div>
-
-      <div class="card">
-        <h3>B-Kodu Engelleme (BTK)</h3>
-        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Mesaj sonundaki yetkili operatör kodu eşleşirse engellenir.</p>
-        <div class="input-group">
-          <input type="text" id="input-bcode" placeholder="Örn: B214, B002">
-          <button class="btn-primary" onclick="addRule('bcodes')">Ekle</button>
-        </div>
-        <div id="tags-bcodes" class="tag-container"></div>
-      </div>
-    </div>
-
-    <!-- SPAM / KARANTİNA SEKMESİ -->
-    <div id="tab-spam" class="tab-pane">
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-        <button class="btn-danger" onclick="clearSpam()">Tüm Karantinayı Temizle</button>
-      </div>
-      <div id="spam-list"></div>
-    </div>
-  </div>
-
-  <button class="fab-btn" onclick="openComposeModal()" title="Yeni Mesaj">✏️</button>
-
-  <!-- YENİ MESAJ MODALI -->
-  <div id="compose-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h2>
-        <span>Yeni SMS Gönder</span>
-        <button class="close-btn" onclick="closeComposeModal()">&times;</button>
-      </h2>
-      <div style="margin-bottom: 12px;">
-        <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">Gönderilecek SIM Kart</label>
-        <select id="compose-sim-select"></select>
-      </div>
-      <div style="margin-bottom: 12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-          <label style="font-size:0.8rem; color:var(--text-muted);">Alıcı Numara</label>
-          <button style="background:none; border:none; color:var(--primary); font-size:0.8rem; cursor:pointer; font-weight:bold;" onclick="openContactPicker()">👥 Rehberden Seç</button>
-        </div>
-        <input type="tel" id="compose-phone" placeholder="Örn: 05551234567" style="width:100%;">
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">Mesaj Metni</label>
-        <textarea id="compose-message" rows="4" placeholder="Mesajınızı yazın..." style="width:100%;"></textarea>
-      </div>
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button class="btn-primary" style="background:transparent; border:1px solid var(--border);" onclick="closeComposeModal()">İptal</button>
-        <button class="btn-primary" onclick="handleSendSms()">Gönder 🚀</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- REHBER MODALI -->
-  <div id="contact-picker-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h2>
-        <span>Rehberden Kişi Seç</span>
-        <button class="close-btn" onclick="closeContactPicker()">&times;</button>
-      </h2>
-      <input type="text" id="contact-search" placeholder="Kişilerde ara..." style="margin-bottom:12px; width:100%;" oninput="filterContacts(this.value)">
-      <div id="contact-list" style="overflow-y:auto; flex:1;"></div>
-    </div>
-  </div>
-
-  <!-- KATEGORİYE ATA MODALI -->
-  <div id="assign-category-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h2>
-        <span>Sekmeye Sabitle</span>
-        <button class="close-btn" onclick="closeAssignCategoryModal()">&times;</button>
-      </h2>
-      <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Seçilen göndericiler bu sekmeye bağlanacak ve sonraki tüm mesajları doğrudan bu sekmede listelenecektir.</p>
-      <div id="assign-category-list" style="display:flex; flex-direction:column; gap:8px;"></div>
-    </div>
-  </div>
-
-  <!-- SOHBET PENCERESİ -->
-  <div id="chat-view" class="chat-view">
-    <div class="chat-header">
-      <button class="chat-back-btn" onclick="closeChatView()">&larr;</button>
-      <div>
-        <div id="chat-title" style="font-weight:bold; font-size:0.95rem;">-</div>
-        <div id="chat-sub" style="font-size:0.75rem; color:var(--text-muted);">-</div>
-      </div>
-    </div>
-    <div id="chat-body" class="chat-body"></div>
-    <div class="chat-footer">
-      <input type="text" id="chat-input" placeholder="Mesaj yaz..." onkeypress="if(event.key === 'Enter') sendReplySms()">
-      <button onclick="sendReplySms()">Gönder</button>
-    </div>
-  </div>
-
-  <script>
-    const STORAGE_KEY = "SMS_FILTER_RULES";
-    const contactCache = {};
-    let allContactsList = [];
-    let currentFilter = 'all'; // all, inbox, sent, unassigned
-    let currentSimFilter = 'all';
-    let currentMainTab = 'all';
-    let activeChatTarget = null;
-    let searchQuery = '';
-    const selectedMessages = new Set();
-    let detectedSims = [];
-    let onlyUnassigned = false;
-
-    let categories = [];
-
-    function getBridge() {
-      return window.AndroidBridge || null;
-    }
-
-    function initCategories() {
-      const bridge = getBridge();
-      if (bridge && bridge.getMessages) {
-        try {
-          const raw = bridge.getMessages("categories");
-          categories = JSON.parse(raw || "[]");
-        } catch(e) {
-          categories = [];
-        }
-      } else {
-        categories = JSON.parse(localStorage.getItem("CATEGORIES") || "[]");
-      }
-      renderTabsBar();
-      renderCategoryTags();
-    }
-
-    function saveCategories() {
-      const json = JSON.stringify(categories);
-      localStorage.setItem("CATEGORIES", json);
-      const bridge = getBridge();
-      if (bridge && bridge.saveStoreData) {
-        bridge.saveStoreData("categories", json);
-      }
-      renderTabsBar();
-      renderCategoryTags();
-    }
-
-    function createCategory() {
-      const input = document.getElementById('input-new-category');
-      const name = input.value.trim().toUpperCase();
-      if (!name) return;
-
-      if (!categories.find(c => c.name === name)) {
-        categories.push({ name: name, senders: [] });
-        saveCategories();
-      }
-      input.value = "";
-    }
-
-    function deleteCategory(name) {
-      if (!confirm(`'${name}' sekmesi kaldırılsın mı?`)) return;
-      categories = categories.filter(c => c.name !== name);
-      saveCategories();
-      if (currentMainTab === name) currentMainTab = 'all';
-      renderTabsBar();
-      loadAllMessages();
-    }
-
-    function renderCategoryTags() {
-      const container = document.getElementById('tags-categories');
-      container.innerHTML = categories.map(c => `
-        <div class="tag">
-          <span>📁 ${c.name} (${c.senders.length} gönderici)</span>
-          <span class="remove-btn" onclick="deleteCategory('${c.name}')">&times;</span>
-        </div>
-      `).join('');
-    }
-
-    function renderTabsBar() {
-      const bar = document.getElementById('main-tabs-bar');
-      let html = `
-        <button class="tab-btn ${currentMainTab === 'all' ? 'active' : ''}" onclick="switchCategoryTab('all')">Mesajlar</button>
-      `;
-
-      categories.forEach(c => {
-        html += `<button class="tab-btn ${currentMainTab === c.name ? 'active' : ''}" onclick="switchCategoryTab('${c.name}')">📁 ${c.name}</button>`;
-      });
-
-      html += `
-        <button class="tab-btn ${currentMainTab === 'rules' ? 'active' : ''}" onclick="switchCategoryTab('rules')">Kurallar</button>
-        <button class="tab-btn ${currentMainTab === 'spam' ? 'active' : ''}" onclick="switchCategoryTab('spam')">Spam / Karantina</button>
-      `;
-      bar.innerHTML = html;
-    }
-
-    function switchCategoryTab(tabName) {
-      currentMainTab = tabName;
-      renderTabsBar();
-      clearSelection();
-
-      document.querySelectorAll('.content .tab-pane').forEach(p => p.classList.remove('active'));
-
-      if (tabName === 'rules') {
-        document.getElementById('tab-rules').classList.add('active');
-      } else if (tabName === 'spam') {
-        document.getElementById('tab-spam').classList.add('active');
-        loadSpamMessages();
-      } else {
-        document.getElementById('tab-messages').classList.add('active');
-        loadAllMessages();
-      }
-    }
-
-    function getSenderCategory(sender) {
-      if (!sender) return null;
-      const upper = sender.toUpperCase();
-      for (let c of categories) {
-        if (c.senders.some(s => s.toUpperCase() === upper)) {
-          return c.name;
-        }
-      }
-      return null;
-    }
-
-    function toggleUnassignedFilter(checked) {
-      onlyUnassigned = checked;
-      loadAllMessages();
-    }
-
-    function openAssignCategoryModal() {
-      if (selectedMessages.size === 0) return;
-      if (categories.length === 0) {
-        alert("Önce Kurallar sekmesinden en az bir sekme (kategori) oluşturmalısınız.");
-        return;
-      }
-      const listDiv = document.getElementById('assign-category-list');
-      listDiv.innerHTML = categories.map(c => `
-        <button class="btn-primary" style="text-align:left; padding:12px; background:#1e293b;" onclick="assignSelectedToCategory('${c.name}')">
-          📁 ${c.name}
-        </button>
-      `).join('');
-      document.getElementById('assign-category-modal').classList.add('open');
-    }
-
-    function closeAssignCategoryModal() {
-      document.getElementById('assign-category-modal').classList.remove('open');
-    }
-
-    function assignSelectedToCategory(catName) {
-      const bridge = getBridge();
-      let allMsg = [];
-      if (bridge && bridge.getMessages) {
-        try {
-          const inb = JSON.parse(bridge.getMessages("inbox_messages") || "[]");
-          const snt = JSON.parse(bridge.getMessages("sent_messages") || "[]");
-          allMsg = [...inb, ...snt];
-        } catch(e) {}
-      }
-
-      const targetCategory = categories.find(c => c.name === catName);
-      if (!targetCategory) return;
-
-      selectedMessages.forEach(id => {
-        const found = allMsg.find(m => m.id === id);
-        if (found) {
-          const who = (found.sender || found.recipient || "").toUpperCase();
-          if (who && !targetCategory.senders.includes(who)) {
-            targetCategory.senders.push(who);
-          }
-        }
-      });
-
-      saveCategories();
-      closeAssignCategoryModal();
-      clearSelection();
-      alert(`Seçilen göndericiler '${catName}' sekmesine sabitlendi!`);
-      loadAllMessages();
-    }
-
-    function initSims() {
-      const bridge = getBridge();
-      if (bridge && bridge.getActiveSimSlots) {
-        try {
-          detectedSims = JSON.parse(bridge.getActiveSimSlots() || "[]");
-        } catch(e) {
-          detectedSims = [];
-        }
-      }
-      const select = document.getElementById('compose-sim-select');
-      if (detectedSims.length > 0) {
-        select.innerHTML = detectedSims.map(s => `
-          <option value="${s.subId}">SIM ${s.slotIndex} (${s.carrier})</option>
-        `).join('');
-      } else {
-        select.innerHTML = '<option value="0">Varsayılan SIM Kart</option>';
-      }
-    }
-
-    function resolveContact(sender) {
-      if (!sender) return { title: "Bilinmeyen", sub: "" };
-      const isPhone = /^(\+?[0-9\s\-()]+)$/.test(sender.trim());
-      if (!isPhone) return { title: sender, sub: "" };
-
-      if (contactCache[sender] !== undefined) {
-        return {
-          title: contactCache[sender] || sender,
-          sub: contactCache[sender] ? sender : ""
-        };
-      }
-
-      const bridge = getBridge();
-      if (bridge && bridge.getContactName) {
-        try {
-          const name = bridge.getContactName(sender);
-          contactCache[sender] = name || "";
-          if (name) return { title: name, sub: sender };
-        } catch(e) {}
-      }
-      return { title: sender, sub: "" };
-    }
-
-    function handleSearch(val) {
-      searchQuery = val.trim().toLowerCase();
-      loadAllMessages();
-      loadSpamMessages();
-    }
-
-    function openContactPicker() {
-      const bridge = getBridge();
-      if (bridge && bridge.getAllContacts) {
-        try {
-          allContactsList = JSON.parse(bridge.getAllContacts() || "[]");
-        } catch(e) {
-          allContactsList = [];
-        }
-      }
-      renderContacts(allContactsList);
-      document.getElementById('contact-picker-modal').classList.add('open');
-    }
-
-    function closeContactPicker() {
-      document.getElementById('contact-picker-modal').classList.remove('open');
-    }
-
-    function renderContacts(list) {
-      const cont = document.getElementById('contact-list');
-      if (!list || list.length === 0) {
-        cont.innerHTML = '<div class="empty-state">Rehber kaydı bulunamadı.</div>';
-        return;
-      }
-      cont.innerHTML = list.map(c => `
-        <div class="contact-item" onclick="selectContact('${c.phone}')">
-          <span style="font-weight:600;">${c.name}</span>
-          <span style="color:var(--text-muted); font-size:0.8rem;">${c.phone}</span>
-        </div>
-      `).join('');
-    }
-
-    function filterContacts(q) {
-      const query = q.toLowerCase();
-      const filtered = allContactsList.filter(c => 
-        c.name.toLowerCase().includes(query) || c.phone.includes(query)
-      );
-      renderContacts(filtered);
-    }
-
-    function selectContact(phone) {
-      document.getElementById('compose-phone').value = phone;
-      closeContactPicker();
-    }
-
-    function toggleSelectMessage(id, event) {
-      event.stopPropagation();
-      if (selectedMessages.has(id)) {
-        selectedMessages.delete(id);
-      } else {
-        selectedMessages.add(id);
-      }
-      updateSelectionToolbar();
-    }
-
-    function updateSelectionToolbar() {
-      const bar = document.getElementById('selection-bar');
-      const countLabel = document.getElementById('selected-count');
-      if (selectedMessages.size > 0) {
-        bar.classList.add('active');
-        countLabel.innerText = `${selectedMessages.size} mesaj seçildi`;
-      } else {
-        bar.classList.remove('active');
-      }
-    }
-
-    function clearSelection() {
-      selectedMessages.clear();
-      updateSelectionToolbar();
-      loadAllMessages();
-      loadSpamMessages();
-    }
-
-    function copySelectedBodies() {
-      if (selectedMessages.size === 0) return;
-      const bridge = getBridge();
-      let allMsg = [];
-      if (bridge && bridge.getMessages) {
-        try {
-          const inb = JSON.parse(bridge.getMessages("inbox_messages") || "[]");
-          const snt = JSON.parse(bridge.getMessages("sent_messages") || "[]");
-          const spm = JSON.parse(bridge.getMessages("spam_messages") || "[]");
-          allMsg = [...inb, ...snt, ...spm];
-        } catch(e) {}
-      }
-      const texts = allMsg.filter(m => selectedMessages.has(m.id)).map(m => m.body).join('\n---\n');
-      navigator.clipboard.writeText(texts).then(() => {
-        alert("Seçilen mesajlar kopyalandı!");
-        clearSelection();
-      });
-    }
-
-    function deleteSelectedMessages() {
-      if (selectedMessages.size === 0) return;
-      if (!confirm(`${selectedMessages.size} adet mesaj kalıcı olarak silinsin mi? (Bir daha geri gelmeyecek)`)) return;
-
-      const ids = Array.from(selectedMessages);
-      const bridge = getBridge();
-      if (bridge && bridge.deleteMessagesBulk) {
-        bridge.deleteMessagesBulk("inbox_messages", JSON.stringify(ids));
-        bridge.deleteMessagesBulk("sent_messages", JSON.stringify(ids));
-        bridge.deleteMessagesBulk("spam_messages", JSON.stringify(ids));
-      }
-      clearSelection();
-    }
-
-    function toggleMoveSelected() {
-      if (selectedMessages.size === 0) return;
-      const bridge = getBridge();
-      if (!bridge || !bridge.moveMessage) return;
-
-      const isSpamTab = currentMainTab === 'spam';
-      const fromKey = isSpamTab ? "spam_messages" : "inbox_messages";
-      const toKey = isSpamTab ? "inbox_messages" : "spam_messages";
-
-      selectedMessages.forEach(id => {
-        bridge.moveMessage(fromKey, toKey, id);
-      });
-
-      alert(`Mesajlar ${isSpamTab ? 'Gelen Kutusuna' : 'Karantinaya'} taşındı.`);
-      clearSelection();
-    }
-
-    function handleSyncDeviceSms() {
-      const bridge = getBridge();
-      if (bridge && bridge.syncDeviceSms) {
-        const count = bridge.syncDeviceSms();
-        alert(`${count} adet yeni SMS senkronize edildi.`);
-        loadAllMessages();
-      }
-    }
-
-    function switchSubTab(type) {
-      currentFilter = type;
-      const parent = event.currentTarget.parentElement;
-      parent.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-      loadAllMessages();
-    }
-
-    function switchSimFilter(sim) {
-      currentSimFilter = sim;
-      const parent = event.currentTarget.parentElement;
-      parent.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-      loadAllMessages();
-    }
-
-    function openComposeModal() {
-      initSims();
-      document.getElementById('compose-phone').value = "";
-      document.getElementById('compose-message').value = "";
-      document.getElementById('compose-modal').classList.add('open');
-    }
-
-    function closeComposeModal() {
-      document.getElementById('compose-modal').classList.remove('open');
-    }
-
-    function handleSendSms() {
-      const phone = document.getElementById('compose-phone').value.trim();
-      const message = document.getElementById('compose-message').value.trim();
-      const subId = parseInt(document.getElementById('compose-sim-select').value, 10) || 0;
-
-      if (!phone || !message) {
-        alert("Lütfen telefon numarası ve mesaj yazın.");
-        return;
-      }
-
-      const bridge = getBridge();
-      if (bridge && bridge.sendSms) {
-        bridge.sendSms(phone, message, subId);
-        closeComposeModal();
-        setTimeout(loadAllMessages, 300);
-      }
-    }
-
-    function openChatView(target) {
-      if (selectedMessages.size > 0) return;
-      activeChatTarget = target;
-      const display = resolveContact(target);
-      document.getElementById('chat-title').innerText = display.title;
-      document.getElementById('chat-sub').innerText = display.sub || target;
-      document.getElementById('chat-view').classList.add('open');
-      renderChatThread();
-    }
-
-    function closeChatView() {
-      activeChatTarget = null;
-      document.getElementById('chat-view').classList.remove('open');
-      loadAllMessages();
-    }
-
-    function sendReplySms() {
-      const input = document.getElementById('chat-input');
-      const text = input.value.trim();
-      if (!text || !activeChatTarget) return;
-
-      const bridge = getBridge();
-      if (bridge && bridge.sendSms) {
-        bridge.sendSms(activeChatTarget, text, 0);
-        input.value = "";
-        setTimeout(renderChatThread, 300);
-      }
-    }
-
-    function renderChatThread() {
-      if (!activeChatTarget) return;
-      const bridge = getBridge();
-      let inbox = [];
-      let sent = [];
-
-      if (bridge && bridge.getMessages) {
-        try {
-          inbox = JSON.parse(bridge.getMessages("inbox_messages") || "[]");
-          sent = JSON.parse(bridge.getMessages("sent_messages") || "[]");
-        } catch(e) {}
-      }
-
-      const thread = [];
-      inbox.forEach(m => {
-        if (m.sender === activeChatTarget) thread.push({ ...m, type: 'in' });
-      });
-      sent.forEach(m => {
-        if (m.recipient === activeChatTarget) thread.push({ ...m, type: 'out' });
-      });
-
-      thread.sort((a, b) => a.id - b.id);
-
-      const body = document.getElementById('chat-body');
-      if (thread.length === 0) {
-        body.innerHTML = '<div class="empty-state">Mesaj bulunmuyor.</div>';
-      } else {
-        body.innerHTML = thread.map(m => `
-          <div class="chat-bubble ${m.type}">
-            <div>${m.body}</div>
-            <div class="bubble-time">${m.simSlot ? `[${m.simSlot}] ` : ''}${m.date}</div>
+        <div class="form-group">
+          <label for="auth-password">Şifre</label>
+          <div class="input-wrap">
+            <input id="auth-password" class="form-input" type="password" placeholder="En az 6 karakter" autocomplete="current-password" required style="padding-right: 42px;" />
+            <button id="btn-toggle-pass" class="eye-btn" type="button" aria-label="Şifreyi göster">👁️</button>
           </div>
-        `).join('');
-      }
-      body.scrollTop = body.scrollHeight;
-    }
+        </div>
 
-    function loadAllMessages() {
-      const bridge = getBridge();
-      let inbox = [];
-      let sent = [];
+        <button id="btn-auth-submit" class="btn btn-primary w-full" type="submit">Giriş Yap</button>
+      </form>
 
-      if (bridge && bridge.getMessages) {
-        try {
-          inbox = JSON.parse(bridge.getMessages("inbox_messages") || "[]").map(m => ({ ...m, kind: 'inbox', who: m.sender }));
-          sent = JSON.parse(bridge.getMessages("sent_messages") || "[]").map(m => ({ ...m, kind: 'sent', who: m.recipient }));
-        } catch(e) {}
-      }
+      <div class="auth-footer-links">
+        <button id="btn-open-setup" class="link-btn" type="button">⚙️ Bağlantı & Kurulum</button>
+        <button id="btn-demo-mode" class="link-btn" type="button">👁️ Demo Önizleme</button>
+      </div>
+    </div>
+  </section>
 
-      let combined = [];
-      if (currentFilter === 'all') combined = [...inbox, ...sent];
-      else if (currentFilter === 'inbox') combined = inbox;
-      else if (currentFilter === 'sent') combined = sent;
-      else if (currentFilter === 'unassigned') combined = [...inbox, ...sent].filter(m => getSenderCategory(m.who) === null);
+  <!-- ==================== 2. ANA MAĞAZA ARAYÜZÜ ==================== -->
+  <div id="app-view" class="app-shell hidden">
+    <header class="topbar">
+      <div class="topbar-row">
+        <div class="topbar-brand">
+          <div class="topbar-brand-dot" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M7 5L19 12L7 19V5Z" fill="#fff" />
+            </svg>
+          </div>
+          <span id="header-store-title">YMC Store</span>
+        </div>
 
-      // Özel Dinamik Kategori Sekmesi Seçiliyse (Örn: BANKA)
-      if (currentMainTab !== 'all' && currentMainTab !== 'rules' && currentMainTab !== 'spam') {
-        const cat = categories.find(c => c.name === currentMainTab);
-        if (cat) {
-          const setSenders = new Set(cat.senders.map(s => s.toUpperCase()));
-          combined = combined.filter(m => setSenders.has((m.who || '').toUpperCase()));
-        }
-      }
+        <div class="search-pill">
+          <span aria-hidden="true">🔍</span>
+          <input id="search-input" type="search" placeholder="Uygulama ara..." />
+          <button id="btn-clear-search" class="hidden" type="button" style="color:var(--text-muted); font-size:0.9rem;">✕</button>
+        </div>
 
-      // Atanmamışlar Checkbox Filtresi
-      if (onlyUnassigned && currentFilter !== 'unassigned') {
-        combined = combined.filter(m => getSenderCategory(m.who) === null);
-      }
+        <button id="btn-theme-toggle" class="icon-btn" type="button" title="Tema Değiştir">☀️</button>
+        <button id="btn-refresh-store" class="icon-btn" type="button" title="Yenile">🔄</button>
+        <button id="topbar-avatar" class="avatar-chip" type="button" title="Hesabım">U</button>
+      </div>
+    </header>
 
-      // SIM Kart Filtresi
-      if (currentSimFilter !== 'all') {
-        combined = combined.filter(m => (m.simSlot || 'SIM 1') === currentSimFilter);
-      }
+    <main class="main-container">
+      <!-- KEŞFET / MAĞAZA SEKMESİ -->
+      <section id="pane-store" class="tab-pane">
+        <div id="announcement-bar" class="announcement-bar hidden">
+          <span>📢</span>
+          <span id="announcement-text"></span>
+        </div>
 
-      // Arama Filtresi
-      if (searchQuery) {
-        combined = combined.filter(m => {
-          const disp = resolveContact(m.who);
-          return m.body.toLowerCase().includes(searchQuery) ||
-                 m.who.toLowerCase().includes(searchQuery) ||
-                 disp.title.toLowerCase().includes(searchQuery);
-        });
-      }
+        <div id="category-chips" class="chips-scroll"></div>
 
-      combined.sort((a, b) => b.id - a.id);
+        <div id="featured-section" class="hidden">
+          <div class="section-header">
+            <h2>Öne Çıkanlar</h2>
+          </div>
+          <div id="featured-carousel" class="featured-carousel"></div>
+        </div>
 
-      // Atanmamış mesaj sayısını hesaplayıp etikete yaz
-      const totalUnassigned = [...inbox, ...sent].filter(m => getSenderCategory(m.who) === null).length;
-      const badge = document.getElementById('unassigned-badge-count');
-      if (badge) badge.innerText = totalUnassigned > 0 ? `(${totalUnassigned} atanmamış)` : '';
+        <div class="section-header">
+          <h2 id="apps-list-heading">Tüm Uygulamalar</h2>
+          <select id="sort-select" class="sort-select" aria-label="Sıralama">
+            <option value="updated">En Güncel</option>
+            <option value="downloads">En Çok İndirilen</option>
+            <option value="rating">En Yüksek Puan</option>
+            <option value="name">Ada Göre (A-Z)</option>
+          </select>
+        </div>
 
-      const container = document.getElementById('messages-list');
-      if (combined.length === 0) {
-        container.innerHTML = '<div class="empty-state">Bu sekmede eşleşen mesaj bulunamadı.</div>';
-        return;
-      }
+        <div id="apps-grid" class="apps-grid"></div>
+      </section>
 
-      container.innerHTML = combined.map(m => {
-        const display = resolveContact(m.who);
-        const isSent = m.kind === 'sent';
-        const isChecked = selectedMessages.has(m.id) ? 'checked' : '';
-        const simTag = m.simSlot || 'SIM 1';
-        const simBadgeClass = simTag === 'SIM 2' ? 'sim-2' : 'sim-1';
-        const assignedCat = getSenderCategory(m.who);
+      <!-- UYGULAMALARIM / GÜNCELLEMELER SEKMESİ -->
+      <section id="pane-library" class="tab-pane hidden">
+        <div id="web-library-notice" class="announcement-bar hidden">
+          <span>ℹ️</span>
+          <span>Cihazdaki yüklü uygulamaların otomatik algılanması ve 1 dokunuşla kurulum Android APK içinde aktiftir.</span>
+        </div>
 
-        return `
-          <div class="sms-item ${m.kind}" onclick="openChatView('${m.who}')">
-            <input type="checkbox" class="sms-checkbox" ${isChecked} onclick="toggleSelectMessage(${m.id}, event)">
-            <div class="sms-content-wrap">
-              <div class="sms-header">
-                <span class="sms-sender">
-                  ${isSent ? '📤 Kime: ' : ''}${display.title}
-                  ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
-                  ${assignedCat ? `<span class="category-badge">📁 ${assignedCat}</span>` : ''}
-                  <span class="sim-badge ${simBadgeClass}">${simTag}</span>
-                </span>
-                <span class="sms-date">${m.date}</span>
+        <div id="updates-section" class="hidden">
+          <div class="section-header">
+            <h2>Güncelleme Mevcut</h2>
+          </div>
+          <div id="updates-list" class="apps-grid"></div>
+        </div>
+
+        <div class="section-header">
+          <h2>Cihazda Yüklü</h2>
+        </div>
+        <div id="installed-list" class="apps-grid"></div>
+
+        <div class="section-header" style="margin-top: 22px;">
+          <h2>Mağazadaki Diğer Uygulamalar</h2>
+        </div>
+        <div id="not-installed-list" class="apps-grid"></div>
+      </section>
+
+      <!-- YÖNETİCİ PANELİ (SADECE ADMIN) -->
+      <section id="pane-admin" class="tab-pane hidden">
+        <div class="admin-stats-grid">
+          <div class="mini-stat">
+            <strong id="stat-total-apps">0</strong>
+            <span>Uygulama</span>
+          </div>
+          <div class="mini-stat">
+            <strong id="stat-total-downloads">0</strong>
+            <span>Toplam İndirme</span>
+          </div>
+          <div class="mini-stat">
+            <strong id="stat-drive-status">Drive</strong>
+            <span>Bağlı Klasör</span>
+          </div>
+        </div>
+
+        <div class="admin-subtabs">
+          <button class="chip active" data-admin-tab="publish" type="button">📤 Yayınla / Düzenle</button>
+          <button class="chip" data-admin-tab="drive" type="button">☁️ Drive Klasörü</button>
+          <button class="chip" data-admin-tab="manage" type="button">📋 Uygulamalar</button>
+          <button class="chip" data-admin-tab="users" type="button">👥 Üyeler & Ayarlar</button>
+        </div>
+
+        <!-- Alt Sekme 1: APK Yükle ve Yayınla -->
+        <div id="admin-sub-publish" class="admin-subpane">
+          <div class="panel-card">
+            <h3 id="admin-form-title">Yeni Uygulama Ekle / APK Yükle</h3>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+              <button id="btn-pick-apk" class="btn btn-accent" type="button" style="flex:1;">
+                📱 Telefondan APK Seç & Yükle
+              </button>
+              <input id="web-apk-input" type="file" accept=".apk" class="hidden" />
+            </div>
+
+            <div id="picked-apk-summary" class="mono-box hidden" style="margin-bottom:12px;"></div>
+
+            <div id="upload-progress-wrap" class="hidden" style="margin-bottom:12px;">
+              <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600;">
+                <span>Google Drive'a yükleniyor...</span>
+                <span id="upload-progress-text">%0</span>
               </div>
-              <div class="sms-body">${m.body}</div>
+              <div class="progress-track">
+                <div id="upload-progress-bar" class="progress-fill"></div>
+              </div>
+            </div>
+
+            <input id="app-edit-id" type="hidden" />
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="app-drive-id">Drive Dosya ID *</label>
+                <input id="app-drive-id" class="form-input" type="text" placeholder="Otomatik dolar veya yapıştırın" />
+              </div>
+              <div class="form-group">
+                <label for="app-file-size">Dosya Boyutu</label>
+                <input id="app-file-size" class="form-input" type="text" placeholder="Örn: 18.4 MB" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="app-file-name">APK Dosya Adı</label>
+              <input id="app-file-name" class="form-input" type="text" placeholder="Örn: KasaDefteri.apk" />
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="app-name">Uygulama Adı *</label>
+                <input id="app-name" class="form-input" type="text" placeholder="Örn: Kasa Defteri" />
+              </div>
+              <div class="form-group">
+                <label for="app-pkg">Paket Adı (Package ID)</label>
+                <input id="app-pkg" class="form-input" type="text" placeholder="com.ymc.uygulama" />
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="app-ver-name">Sürüm Adı</label>
+                <input id="app-ver-name" class="form-input" type="text" value="1.0.0" placeholder="1.0.0" />
+              </div>
+              <div class="form-group">
+                <label for="app-ver-code">Sürüm Kodu (Güncelleme için artırın)</label>
+                <input id="app-ver-code" class="form-input" type="number" value="1" min="1" />
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="app-category">Kategori</label>
+                <select id="app-category" class="form-select">
+                  <option value="Araçlar">Araçlar</option>
+                  <option value="Finans">Finans</option>
+                  <option value="Medya">Medya</option>
+                  <option value="Eğitim">Eğitim</option>
+                  <option value="İletişim">İletişim</option>
+                  <option value="Verimlilik">Verimlilik</option>
+                  <option value="Oyun">Oyun</option>
+                  <option value="Diğer">Diğer</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="app-developer">Geliştirici</label>
+                <input id="app-developer" class="form-input" type="text" value="Erhan Yamaç" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="app-short-desc">Kısa Açıklama</label>
+              <input id="app-short-desc" class="form-input" type="text" placeholder="Kartlarda görünecek tek satırlık özet" />
+            </div>
+
+            <div class="form-group">
+              <label for="app-description">Detaylı Açıklama</label>
+              <textarea id="app-description" class="form-textarea" placeholder="Uygulama özelliklerini yazın..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="app-whats-new">Bu Sürümdeki Yenilikler</label>
+              <textarea id="app-whats-new" class="form-textarea" placeholder="- Hata düzeltmeleri..." style="min-height:64px;"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Uygulama İkonu</label>
+              <div style="display:flex; gap:10px; align-items:center;">
+                <div id="app-icon-preview" class="app-icon">YM</div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                  <input id="app-icon-url" class="form-input" type="url" placeholder="İkon URL veya aşağıdan resim yükle" />
+                  <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                    🖼️ Galeriden İkon Yükle (Drive)
+                    <input id="icon-file-input" type="file" accept="image/*" class="hidden" />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Ekran Görüntüleri</label>
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                📸 Ekran Görüntüsü Ekle (Drive)
+                <input id="screenshots-file-input" type="file" accept="image/*" multiple class="hidden" />
+              </label>
+              <div id="app-screenshots-preview" class="thumbs-edit-row"></div>
+            </div>
+
+            <label class="switch-row">
+              <span>Öne Çıkanlar vitrininde göster</span>
+              <input id="app-featured" type="checkbox" />
+            </label>
+
+            <label class="switch-row">
+              <span>Mağazada yayında (Kullanıcılar görsün)</span>
+              <input id="app-active" type="checkbox" checked />
+            </label>
+
+            <div style="display:flex; gap:10px; margin-top:12px;">
+              <button id="btn-reset-app-form" class="btn btn-secondary" type="button">Temizle</button>
+              <button id="btn-save-app" class="btn btn-primary" type="button" style="flex:1;">Kaydet ve Yayınla 🚀</button>
             </div>
           </div>
-        `;
-      }).join('');
-    }
+        </div>
 
-    function loadSpamMessages() {
-      const bridge = getBridge();
-      let spamList = [];
-      if (bridge && bridge.getMessages) {
-        try {
-          spamList = JSON.parse(bridge.getMessages("spam_messages") || "[]");
-        } catch(e) {}
-      }
-
-      if (searchQuery) {
-        spamList = spamList.filter(m => {
-          const disp = resolveContact(m.sender);
-          return m.body.toLowerCase().includes(searchQuery) ||
-                 m.sender.toLowerCase().includes(searchQuery) ||
-                 disp.title.toLowerCase().includes(searchQuery);
-        });
-      }
-
-      const container = document.getElementById('spam-list');
-      if (spamList.length === 0) {
-        container.innerHTML = '<div class="empty-state">Karantinada eşleşen mesaj bulunmuyor.</div>';
-        return;
-      }
-
-      container.innerHTML = spamList.slice().reverse().map(m => {
-        const display = resolveContact(m.sender);
-        const isChecked = selectedMessages.has(m.id) ? 'checked' : '';
-        const simTag = m.simSlot || 'SIM 1';
-        const simBadgeClass = simTag === 'SIM 2' ? 'sim-2' : 'sim-1';
-
-        return `
-          <div class="sms-item spam">
-            <input type="checkbox" class="sms-checkbox" ${isChecked} onclick="toggleSelectMessage(${m.id}, event)">
-            <div class="sms-content-wrap">
-              <div class="sms-header">
-                <span class="sms-sender">
-                  ${display.title}
-                  ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
-                  <span class="sim-badge ${simBadgeClass}">${simTag}</span>
-                </span>
-                <span class="sms-date">${m.date}</span>
+        <!-- Alt Sekme 2: Drive Klasörü Tarama -->
+        <div id="admin-sub-drive" class="admin-subpane hidden">
+          <div class="panel-card">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;">
+              <div>
+                <h3 style="margin-bottom:2px;">Drive Klasörü (YMC Store)</h3>
+                <p style="font-size:0.78rem; color:var(--text-muted);">Drive'a attığınız APK'ları tek tıkla mağazaya ekleyin.</p>
               </div>
-              <div class="sms-body">${m.body}</div>
-              <div class="sms-reason">🚨 ${m.reason}</div>
+              <button id="btn-scan-drive" class="btn btn-primary btn-sm" type="button">🔄 Tara</button>
+            </div>
+            <div id="drive-files-list">
+              <div class="empty-box">Drive klasöründeki APK dosyalarını görmek için <b>Tara</b> butonuna dokunun.</div>
             </div>
           </div>
-        `;
-      }).join('');
-    }
+        </div>
 
-    function clearSpam() {
-      if (confirm("Karantinadaki tüm mesajlar silinsin mi?")) {
-        const bridge = getBridge();
-        if (bridge && bridge.clearMessages) {
-          bridge.clearMessages("spam_messages");
-          loadSpamMessages();
-        }
-      }
-    }
-
-    function loadRules() {
-      const bridge = getBridge();
-      if (bridge && bridge.getMessages) {
-        try {
-          const rules = bridge.getMessages("rules");
-          if (rules && rules !== "[]") return JSON.parse(rules);
-        } catch(e) {}
-      }
-      const local = localStorage.getItem(STORAGE_KEY);
-      return local ? JSON.parse(local) : { titles: ["BAHIS", "BET", "KASINO"], bcodes: ["B214", "B002"] };
-    }
-
-    function saveRules(rules) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(rules));
-      const bridge = getBridge();
-      if (bridge && bridge.saveStoreData) {
-        bridge.saveStoreData("rules", JSON.stringify(rules));
-      }
-      renderRules();
-    }
-
-    function addRule(type) {
-      const input = document.getElementById(type === 'titles' ? 'input-title' : 'input-bcode');
-      const val = input.value.trim().toUpperCase();
-      if (!val) return;
-      const rules = loadRules();
-      if (!rules[type].includes(val)) {
-        rules[type].push(val);
-        saveRules(rules);
-      }
-      input.value = "";
-    }
-
-    function removeRule(type, val) {
-      const rules = loadRules();
-      rules[type] = rules[type].filter(item => item !== val);
-      saveRules(rules);
-    }
-
-    function renderRules() {
-      const rules = loadRules();
-      ['titles', 'bcodes'].forEach(type => {
-        const container = document.getElementById(`tags-${type}`);
-        container.innerHTML = rules[type].map(item => `
-          <div class="tag">
-            <span>${item}</span>
-            <span class="remove-btn" onclick="removeRule('${type}', '${item}')">&times;</span>
+        <!-- Alt Sekme 3: Uygulamaları Yönet -->
+        <div id="admin-sub-manage" class="admin-subpane hidden">
+          <div class="panel-card">
+            <h3>Kayıtlı Uygulamalar</h3>
+            <div id="admin-apps-list"></div>
           </div>
-        `).join('');
-      });
-    }
+        </div>
 
-    window.addEventListener('DOMContentLoaded', () => {
-      initCategories();
-      renderRules();
-      initSims();
-      
-      const bridge = getBridge();
-      if (bridge && bridge.syncDeviceSms) {
-        try { bridge.syncDeviceSms(); } catch(e) {}
-      }
+        <!-- Alt Sekme 4: Üyeler & Ayarlar -->
+        <div id="admin-sub-users" class="admin-subpane hidden">
+          <div class="panel-card">
+            <h3>Mağaza Ayarları</h3>
+            <div class="form-group">
+              <label for="set-store-name">Mağaza Adı</label>
+              <input id="set-store-name" class="form-input" type="text" />
+            </div>
+            <div class="form-group">
+              <label for="set-store-subtitle">Alt Başlık</label>
+              <input id="set-store-subtitle" class="form-input" type="text" />
+            </div>
+            <div class="form-group">
+              <label for="set-announcement">Ana Sayfa Duyuru Bandı</label>
+              <input id="set-announcement" class="form-input" type="text" placeholder="Boş bırakırsanız gizlenir" />
+            </div>
+            <div class="form-group">
+              <label for="set-admin-emails">Yönetici E-postaları (virgülle)</label>
+              <input id="set-admin-emails" class="form-input" type="text" />
+            </div>
+            <button id="btn-save-settings" class="btn btn-primary w-full" type="button">Ayarları Kaydet</button>
+          </div>
 
-      loadAllMessages();
-    });
-  </script>
+          <div class="panel-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h3 style="margin:0;">Kayıtlı Üyeler</h3>
+              <button id="btn-load-users" class="btn btn-secondary btn-sm" type="button">Yenile</button>
+            </div>
+            <div id="admin-users-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROFİL / HESABIM SEKMESİ -->
+      <section id="pane-profile" class="tab-pane hidden">
+        <div class="panel-card" style="display:flex; align-items:center; gap:14px;">
+          <div id="profile-avatar" class="avatar-chip" style="width:58px; height:58px; font-size:1.3rem;">U</div>
+          <div style="flex:1; min-width:0;">
+            <h3 id="profile-name" style="margin-bottom:2px;">-</h3>
+            <div id="profile-email" style="font-size:0.84rem; color:var(--text-muted); word-break:break-all;">-</div>
+            <div id="profile-badges" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;"></div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <h3>Görünüm</h3>
+          <div class="segmented-tabs" style="margin-bottom:0;">
+            <button id="btn-theme-dark" class="segmented-btn" type="button">🌙 Koyu</button>
+            <button id="btn-theme-light" class="segmented-btn" type="button">☀️ Açık</button>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <h3>Cihaz & Kurulum Bilgisi</h3>
+          <div id="device-info-box" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;"></div>
+          <button id="btn-grant-install-perm" class="btn btn-secondary btn-sm w-full hidden" type="button" style="margin-bottom:10px;">
+            🛡️ Bilinmeyen Kaynaklardan Yükleme İzni Ver
+          </button>
+          <div id="sha1-wrap" class="hidden" style="margin-bottom:10px;">
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:4px;">APK İmza Parmak İzi (SHA-1):</div>
+            <div id="sha1-box" class="mono-box"></div>
+            <button id="btn-copy-sha1" class="btn btn-secondary btn-sm w-full" type="button" style="margin-top:6px;">📋 SHA-1 Kopyala</button>
+          </div>
+          <button id="btn-profile-setup" class="btn btn-secondary w-full" type="button">⚙️ Bağlantı & Apps Script Ayarları</button>
+        </div>
+
+        <button id="btn-logout" class="btn btn-danger w-full" type="button">🚪 Oturumu Kapat</button>
+      </section>
+    </main>
+
+    <!-- ALT GEZİNTİ ÇUBUĞU -->
+    <nav id="bottom-nav" class="bottom-nav">
+      <button class="nav-item active" data-tab="store" type="button">
+        <span class="nav-icon">🏪</span>
+        <span>Mağaza</span>
+      </button>
+      <button class="nav-item" data-tab="library" type="button">
+        <span class="nav-icon">📦</span>
+        <span>Yüklüler</span>
+      </button>
+      <button id="nav-admin-btn" class="nav-item hidden" data-tab="admin" type="button">
+        <span class="nav-icon">🛠️</span>
+        <span>Yönetim</span>
+      </button>
+      <button class="nav-item" data-tab="profile" type="button">
+        <span class="nav-icon">👤</span>
+        <span>Hesabım</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ==================== 3. UYGULAMA DETAY EKRANI ==================== -->
+  <section id="detail-view" class="detail-overlay hidden">
+    <div class="detail-topbar">
+      <button id="btn-detail-back" class="icon-btn" type="button" aria-label="Geri">&larr;</button>
+      <span id="detail-title-bar" style="font-weight:700; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Uygulama</span>
+      <span id="detail-ver-badge" class="badge badge-blue">v1.0.0</span>
+    </div>
+    <div id="detail-content" class="detail-body"></div>
+  </section>
+
+  <!-- ==================== 4. KURULUM & BAĞLANTI MODALI ==================== -->
+  <div id="setup-modal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>⚙️ Drive & Apps Script Kurulumu</h3>
+        <button id="btn-close-setup" class="icon-btn" type="button">&times;</button>
+      </div>
+
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:12px;">
+        <code>backend/Code.gs</code> kodunu Google Apps Script'e yükleyip <b>Web Uygulaması</b> olarak dağıttıktan sonra aldığınız URL'yi aşağıya yapıştırın. Kalıcı olması için <code>www/js/config.js</code> dosyasına da ekleyin.
+      </p>
+
+      <div class="form-group">
+        <label for="setup-script-url">Apps Script Web Uygulaması URL (/exec)</label>
+        <input id="setup-script-url" class="form-input" type="url" placeholder="https://script.google.com/macros/s/.../exec" />
+      </div>
+
+      <div class="form-group">
+        <label for="setup-client-id">Google OAuth Web Client ID (Google ile Giriş için)</label>
+        <input id="setup-client-id" class="form-input" type="text" placeholder="123456789-xxxx.apps.googleusercontent.com" />
+      </div>
+
+      <div id="setup-android-meta" class="hidden" style="margin-bottom:12px;">
+        <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:4px;">Google Cloud OAuth Android İstemcisi için:</div>
+        <div class="mono-box" style="margin-bottom:6px;">Paket: <span id="setup-pkg-display">-</span></div>
+        <div class="mono-box" id="setup-sha1-display">-</div>
+        <button id="btn-copy-setup-sha1" class="btn btn-secondary btn-sm w-full" type="button" style="margin-top:6px;">📋 SHA-1 Parmak İzini Kopyala</button>
+      </div>
+
+      <div id="setup-test-result" class="mono-box hidden" style="margin-bottom:12px;"></div>
+
+      <div style="display:flex; gap:8px;">
+        <button id="btn-test-setup" class="btn btn-secondary" type="button">Bağlantıyı Test Et</button>
+        <button id="btn-save-setup" class="btn btn-primary" type="button" style="flex:1;">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 5. EKRAN GÖRÜNTÜSÜ LIGHTBOX & TOAST ==================== -->
+  <div id="lightbox" class="lightbox-backdrop hidden">
+    <img id="lightbox-img" src="" alt="Ekran Görüntüsü" />
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/bridge.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

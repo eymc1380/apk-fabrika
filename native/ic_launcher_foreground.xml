@@ -3,10 +3,16 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Arka Kalkan / Magaza Rozeti -->
     <path
-        android:fillColor="#0284c7"
-        android:pathData="M54,18 L24,31.5 L24,58.5 C24,76.5 36.8,93.2 54,98 C71.2,93.2 84,76.5 84,58.5 L84,31.5 L54,18 Z"/>
+        android:fillColor="#10B981"
+        android:pathData="M34,26 L74,26 C78.4,26 82,29.6 82,34 L82,74 C82,78.4 78.4,82 74,82 L34,82 C29.6,82 26,78.4 26,74 L26,34 C26,29.6 29.6,26 34,26 Z" />
+    <!-- Ust Mavi Aksan -->
     <path
-        android:fillColor="#ffffff"
-        android:pathData="M48,68 L36,56 L40.2,51.8 L48,59.6 L67.8,39.8 L72,44 L48,68 Z"/>
+        android:fillColor="#2563EB"
+        android:pathData="M34,26 L74,26 C78.4,26 82,29.6 82,34 L82,48 L26,64 L26,34 C26,29.6 29.6,26 34,26 Z" />
+    <!-- Ortada Play / Indir Ucgeni -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M45,39 L45,69 L71,54 Z" />
 </vector>
