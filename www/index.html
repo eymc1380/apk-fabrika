@@ -8,13 +8,46 @@
 </head>
 <body>
 
+  <!-- ==================== 0. AÇILIŞ SPLASH ANİMASYONU ==================== -->
+  <div id="splash-overlay" class="splash-overlay" aria-hidden="true">
+    <div class="splash-glow splash-glow-1"></div>
+    <div class="splash-glow splash-glow-2"></div>
+    <div class="splash-center">
+      <div class="splash-emblem-wrap">
+        <div class="splash-ring"></div>
+        <div class="splash-emblem">
+          <svg width="78" height="78" viewBox="20 18 68 68" fill="none">
+            <path d="M43,35.5 C43,23.5 65,23.5 65,35.5" stroke="#38BDF8" stroke-width="4.2" stroke-linecap="round"/>
+            <path d="M42,34 L66,34 A12,12 0 0 1 78,46 L78,66 A12,12 0 0 1 66,78 L42,78 A12,12 0 0 1 30,66 L30,46 A12,12 0 0 1 42,34 Z" fill="#2563EB"/>
+            <path d="M42,34 L66,34 A12,12 0 0 1 78,46 L78,48 L56,57 Z" fill="#06B6D4"/>
+            <path d="M78,48 L78,66 A12,12 0 0 1 66,78 L42,78 L56,57 Z" fill="#10B981"/>
+            <path d="M42,34 L66,34 C71,34 75.2,37 77,41.2 C72.5,37.8 66,36.4 54,36.4 C42,36.4 35.5,37.8 31,41.2 C32.8,37 37,34 42,34 Z" fill="#FFFFFF" fill-opacity="0.24"/>
+            <path d="M47.4,45.6 C45.9,44.7 44,45.8 44,47.5 L44,64.5 C44,66.2 45.9,67.3 47.4,66.4 L62.8,57.9 C64.3,57.1 64.3,54.9 62.8,54.1 Z" fill="#FFFFFF"/>
+            <path d="M44,47.5 L54.2,56 L44,64.5 Z" fill="#E0F2FE" fill-opacity="0.55"/>
+          </svg>
+          <div class="splash-sheen"></div>
+        </div>
+      </div>
+      <div class="splash-title">YMC Store</div>
+      <div class="splash-subtitle">Özel Android Uygulama Mağazanız</div>
+      <div class="splash-loader">
+        <div class="splash-loader-bar"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== 1. OTURUM / GİRİŞ EKRANI ==================== -->
   <section id="auth-view" class="auth-screen">
     <div class="auth-card">
       <div class="brand-hero">
         <div class="brand-logo-badge" aria-hidden="true">
-          <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
-            <path d="M6 4.5L19.5 12L6 19.5V4.5Z" fill="#ffffff" />
+          <svg width="46" height="46" viewBox="20 18 68 68" fill="none">
+            <path d="M43,35.5 C43,23.5 65,23.5 65,35.5" stroke="#38BDF8" stroke-width="4.2" stroke-linecap="round"/>
+            <path d="M42,34 L66,34 A12,12 0 0 1 78,46 L78,66 A12,12 0 0 1 66,78 L42,78 A12,12 0 0 1 30,66 L30,46 A12,12 0 0 1 42,34 Z" fill="#2563EB"/>
+            <path d="M42,34 L66,34 A12,12 0 0 1 78,46 L78,48 L56,57 Z" fill="#06B6D4"/>
+            <path d="M78,48 L78,66 A12,12 0 0 1 66,78 L42,78 L56,57 Z" fill="#10B981"/>
+            <path d="M47.4,45.6 C45.9,44.7 44,45.8 44,47.5 L44,64.5 C44,66.2 45.9,67.3 47.4,66.4 L62.8,57.9 C64.3,57.1 64.3,54.9 62.8,54.1 Z" fill="#FFFFFF"/>
+            <path d="M44,47.5 L54.2,56 L44,64.5 Z" fill="#E0F2FE" fill-opacity="0.55"/>
           </svg>
         </div>
         <h1 id="auth-store-title">YMC Store</h1>
@@ -78,8 +111,12 @@
       <div class="topbar-row">
         <div class="topbar-brand">
           <div class="topbar-brand-dot" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M7 5L19 12L7 19V5Z" fill="#fff" />
+            <svg width="22" height="22" viewBox="20 18 68 68" fill="none">
+              <path d="M43,35.5 C43,23.5 65,23.5 65,35.5" stroke="#38BDF8" stroke-width="4.2" stroke-linecap="round"/>
+              <path d="M42,34 L66,34 A12,12 0 0 1 78,46 L78,66 A12,12 0 0 1 66,78 L42,78 A12,12 0 0 1 30,66 L30,46 A12,12 0 0 1 42,34 Z" fill="#2563EB"/>
+              <path d="M42,34 L66,34 A12,12 0 0 1 78,46 L78,48 L56,57 Z" fill="#06B6D4"/>
+              <path d="M78,48 L78,66 A12,12 0 0 1 66,78 L42,78 L56,57 Z" fill="#10B981"/>
+              <path d="M47.4,45.6 C45.9,44.7 44,45.8 44,47.5 L44,64.5 C44,66.2 45.9,67.3 47.4,66.4 L62.8,57.9 C64.3,57.1 64.3,54.9 62.8,54.1 Z" fill="#FFFFFF"/>
             </svg>
           </div>
           <span id="header-store-title">YMC Store</span>
@@ -136,18 +173,19 @@
 
         <div id="updates-section" class="hidden">
           <div class="section-header">
-            <h2>Güncelleme Mevcut</h2>
+            <h2 id="updates-heading">Güncelleme Mevcut</h2>
           </div>
           <div id="updates-list" class="apps-grid"></div>
         </div>
 
         <div class="section-header">
-          <h2>Cihazda Yüklü</h2>
+          <h2 id="installed-heading">Cihazda Yüklü</h2>
+          <button id="btn-refresh-library" class="btn btn-secondary btn-sm" type="button">🔄 Kontrol Et</button>
         </div>
         <div id="installed-list" class="apps-grid"></div>
 
         <div class="section-header" style="margin-top: 22px;">
-          <h2>Mağazadaki Diğer Uygulamalar</h2>
+          <h2 id="not-installed-heading">Mağazadaki Diğer Uygulamalar</h2>
         </div>
         <div id="not-installed-list" class="apps-grid"></div>
       </section>
@@ -182,8 +220,11 @@
             <h3 id="admin-form-title">Yeni Uygulama Ekle / APK Yükle</h3>
 
             <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-              <button id="btn-pick-apk" class="btn btn-accent" type="button" style="flex:1;">
-                📱 Telefondan APK Seç & Yükle
+              <button id="btn-pick-apk" class="btn btn-accent" type="button" style="flex:1; min-width:155px;">
+                📁 Dosyadan APK Seç & Yükle
+              </button>
+              <button id="btn-pick-installed-app" class="btn btn-primary" type="button" style="flex:1; min-width:155px;">
+                📲 Yüklü Uygulamadan Seç
               </button>
               <input id="web-apk-input" type="file" accept=".apk" class="hidden" />
             </div>
@@ -478,7 +519,21 @@
     </div>
   </div>
 
-  <!-- ==================== 5. EKRAN GÖRÜNTÜSÜ LIGHTBOX & TOAST ==================== -->
+  <!-- ==================== 5. CİHAZDA YÜKLÜ UYGULAMA SEÇİCİ MODALI ==================== -->
+  <div id="installed-picker-modal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>📲 Yüklü Uygulamadan Seç</h3>
+        <button id="btn-close-installed-picker" class="icon-btn" type="button">&times;</button>
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <input id="installed-picker-search" class="form-input" type="search" placeholder="Uygulama veya paket adı ara..." />
+      </div>
+      <div id="installed-picker-list" style="max-height:56vh; overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 6. EKRAN GÖRÜNTÜSÜ LIGHTBOX & TOAST ==================== -->
   <div id="lightbox" class="lightbox-backdrop hidden">
     <img id="lightbox-img" src="" alt="Ekran Görüntüsü" />
   </div>

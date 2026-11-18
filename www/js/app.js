@@ -6,6 +6,16 @@
 
   const CATEGORIES = ["Tümü", "Araçlar", "Finans", "Medya", "Eğitim", "İletişim", "Verimlilik", "Oyun", "Diğer"];
   const THEME_KEY = "ymc_store_theme";
+  const PKG_HINTS_KEY = "ymc_store_pkg_hints";
+
+  function loadPkgHints() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(PKG_HINTS_KEY) || "{}");
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (e) {
+      return {};
+    }
+  }
 
   const state = {
     user: null,
@@ -17,6 +27,7 @@
     },
     apps: [],
     installedMap: {},
+    pkgHints: loadPkgHints(),
     downloads: {}, // appId -> { percent, downloaded, total }
     currentTab: "store",
     adminTab: "publish",
@@ -28,8 +39,23 @@
     detailRating: 5,
     isUploadingApk: false,
     editScreenshots: [],
+    installedPickerApps: [],
     nativeInfo: window.YmcBridge.getNativeInfo()
   };
+
+  function savePkgHint(appId, pkg) {
+    const clean = String(pkg || "").trim();
+    if (!appId || !clean) return;
+    state.pkgHints[appId] = clean;
+    try {
+      localStorage.setItem(PKG_HINTS_KEY, JSON.stringify(state.pkgHints));
+    } catch (e) {}
+  }
+
+  function getEffectivePkg(app) {
+    if (!app) return "";
+    return String(app.packageName || state.pkgHints[app.id] || "").trim();
+  }
 
   const $ = (id) => document.getElementById(id);
 
@@ -127,7 +153,8 @@
     if (state.downloads[app.id]) {
       return { type: "downloading", ...state.downloads[app.id] };
     }
-    const inst = app.packageName ? state.installedMap[app.packageName] : null;
+    const pkg = getEffectivePkg(app);
+    const inst = pkg ? state.installedMap[pkg] : null;
     if (inst && inst.installed) {
       if ((Number(app.versionCode) || 1) > (Number(inst.versionCode) || 0)) {
         return { type: "update", label: "Güncelle", installed: inst };
@@ -150,15 +177,35 @@
 
   /* ==================== BAŞLATMA & OTURUM ==================== */
 
+  function dismissSplashOverlay() {
+    const splash = $("splash-overlay");
+    if (!splash || splash.dataset.dismissed === "1") return;
+    splash.dataset.dismissed = "1";
+    splash.classList.add("splash-exit");
+    setTimeout(() => {
+      splash.classList.add("hidden");
+    }, 450);
+  }
+
   async function init() {
     const savedTheme = localStorage.getItem(THEME_KEY) || "dark";
     applyTheme(savedTheme);
     bindEvents();
     updateSetupBanner();
 
+    // Açılış animasyonu paralel oturum/katalog yüklemesinin ardından pürüzsüzce kapanır
+    setTimeout(dismissSplashOverlay, 1250);
+
     window.YmcBridge.onResume(() => {
       refreshInstalledStates();
       renderProfileDeviceInfo();
+      setTimeout(refreshInstalledStates, 1100);
+      setTimeout(refreshInstalledStates, 2600);
+    });
+
+    window.YmcBridge.onPackageChanged(() => {
+      refreshInstalledStates();
+      setTimeout(refreshInstalledStates, 550);
     });
 
     const session = window.YmcApi.getSession();
@@ -286,10 +333,10 @@
   }
 
   function refreshInstalledStates() {
-    const pkgs = [...new Set(state.apps.map(a => a.packageName).filter(Boolean))];
-    if (pkgs.length > 0) {
-      state.installedMap = window.YmcBridge.getInstalledAppsStatus(pkgs);
-    }
+    const pkgs = [...new Set(state.apps.map(a => getEffectivePkg(a)).filter(Boolean))];
+    state.installedMap = pkgs.length > 0
+      ? window.YmcBridge.getInstalledAppsStatus(pkgs)
+      : {};
     renderStore();
     renderLibrary();
     if (state.openAppId) renderDetailActionArea();
@@ -327,7 +374,7 @@
         a.name.toLowerCase().includes(q) ||
         a.developer.toLowerCase().includes(q) ||
         a.shortDesc.toLowerCase().includes(q) ||
-        a.packageName.toLowerCase().includes(q)
+        getEffectivePkg(a).toLowerCase().includes(q)
       );
     }
 
@@ -466,7 +513,8 @@
     const others = [];
 
     activeApps.forEach(app => {
-      const inst = app.packageName ? state.installedMap[app.packageName] : null;
+      const pkg = getEffectivePkg(app);
+      const inst = pkg ? state.installedMap[pkg] : null;
       if (inst && inst.installed) {
         if ((Number(app.versionCode) || 1) > (Number(inst.versionCode) || 0)) updates.push(app);
         else installed.push(app);
@@ -474,6 +522,10 @@
         others.push(app);
       }
     });
+
+    if ($("updates-heading")) $("updates-heading").textContent = `Güncelleme Mevcut (${updates.length})`;
+    if ($("installed-heading")) $("installed-heading").textContent = `Cihazda Yüklü (${installed.length})`;
+    if ($("not-installed-heading")) $("not-installed-heading").textContent = `Mağazadaki Diğer Uygulamalar (${others.length})`;
 
     $("updates-section").classList.toggle("hidden", updates.length === 0);
     $("updates-list").innerHTML = updates.map(renderAppCardHtml).join("");
@@ -497,6 +549,7 @@
     if (!app) return;
 
     const act = getAppActionState(app);
+    const pkg = getEffectivePkg(app);
     if (act.type === "downloading") {
       window.YmcBridge.cancelDownload(appId);
       delete state.downloads[appId];
@@ -506,7 +559,7 @@
     }
 
     if (act.type === "open") {
-      const ok = window.YmcBridge.launchApp(app.packageName);
+      const ok = window.YmcBridge.launchApp(pkg);
       if (!ok) showToast("Uygulama başlatılamadı.", "error");
       return;
     }
@@ -516,6 +569,7 @@
       return;
     }
 
+    const serverMissingPkg = !String(app.packageName || "").trim();
     state.downloads[appId] = { percent: 0, downloaded: 0, total: 0 };
     updateProgressUi(appId);
 
@@ -530,9 +584,44 @@
           state.downloads[appId] = { percent, downloaded, total };
           updateProgressUi(appId);
         },
-        onDone: () => {
+        onDone: (dlMeta) => {
           delete state.downloads[appId];
+          const detectedPkg = (dlMeta && dlMeta.packageName) ? String(dlMeta.packageName).trim() : "";
+          if (detectedPkg) {
+            savePkgHint(appId, detectedPkg);
+            if (!app.packageName) app.packageName = detectedPkg;
+            if (dlMeta.versionName && (!app.versionName || app.versionName === "1.0.0")) {
+              app.versionName = dlMeta.versionName;
+            }
+            if (dlMeta.versionCode && !app.versionCode) {
+              app.versionCode = Number(dlMeta.versionCode) || 1;
+            }
+            if (serverMissingPkg && state.user && state.user.role === "admin" && !window.YmcApi.isDemoMode()) {
+              window.YmcApi.saveApp({
+                id: app.id,
+                name: app.name,
+                packageName: detectedPkg,
+                versionName: app.versionName,
+                versionCode: app.versionCode,
+                category: app.category,
+                developer: app.developer,
+                shortDesc: app.shortDesc,
+                description: app.description,
+                whatsNew: app.whatsNew,
+                driveFileId: app.driveFileId,
+                fileName: app.fileName,
+                fileSizeText: app.fileSizeText,
+                iconUrl: app.iconUrl,
+                screenshots: app.screenshots || [],
+                featured: app.featured,
+                active: app.active
+              }).catch(() => {});
+            }
+          }
           updateProgressUi(appId);
+          refreshInstalledStates();
+          setTimeout(refreshInstalledStates, 1200);
+          setTimeout(refreshInstalledStates, 3000);
           if (state.nativeInfo.isNative) {
             showToast(`${app.name} indirildi! Kurulum penceresi açılıyor...`, "success");
           } else {
@@ -599,6 +688,7 @@
 
     state.openAppId = appId;
     state.detailRating = 5;
+    const effectivePkg = getEffectivePkg(app);
     $("detail-title-bar").textContent = app.name;
     $("detail-ver-badge").textContent = "v" + (app.versionName || "1.0.0");
 
@@ -624,7 +714,7 @@
         <div style="min-width:0; flex:1;">
           <div class="detail-title">${esc(app.name)}</div>
           <div class="detail-sub">${esc(app.developer)} • ${esc(app.category)}</div>
-          ${app.packageName ? `<div class="detail-pkg">${esc(app.packageName)}</div>` : ""}
+          ${effectivePkg ? `<div class="detail-pkg">${esc(effectivePkg)}</div>` : ""}
         </div>
       </div>
 
@@ -741,6 +831,7 @@
 
     if (act.type === "open" || act.type === "update") {
       const isUpdate = act.type === "update";
+      const pkg = getEffectivePkg(app);
       area.innerHTML = `
         <div class="detail-actions" style="margin-bottom:6px;">
           <button id="btn-detail-uninstall" class="btn btn-secondary" type="button" style="flex:1;">Kaldır</button>
@@ -752,11 +843,13 @@
           <button id="btn-detail-reinstall" class="link-btn" type="button">APK'yı yeniden indir</button>
         </div>
       `;
-      $("btn-detail-uninstall").addEventListener("click", () => window.YmcBridge.uninstallApp(app.packageName));
+      $("btn-detail-uninstall").addEventListener("click", () => {
+        if (pkg) window.YmcBridge.uninstallApp(pkg);
+      });
       $("btn-detail-primary").addEventListener("click", () => handlePrimaryAppAction(app.id));
       $("btn-detail-reinstall").addEventListener("click", () => {
         // Zorla yeniden indir
-        state.installedMap[app.packageName] = { installed: false };
+        if (pkg) state.installedMap[pkg] = { installed: false };
         handlePrimaryAppAction(app.id);
       });
       return;
@@ -900,44 +993,50 @@
     });
   }
 
-  async function handlePickAndUploadApk() {
-    if (state.isUploadingApk) {
-      showToast("Devam eden bir APK yüklemesi var.", "warning");
+  async function processPickedApkInfo(info) {
+    if (!info) return;
+
+    const lines = [
+      `Seçildi: ${info.fileName} (${formatBytes(info.sizeBytes)})`,
+      `Paket: ${info.packageName || "-"} | Sürüm: ${info.versionName} (${info.versionCode})`
+    ];
+    if (info.isSplit) {
+      lines.push("⚠️ Not: Bu uygulama Split APK (çok parçalı). Yalnızca ana base.apk yüklenecektir.");
+    }
+    $("picked-apk-summary").classList.remove("hidden");
+    $("picked-apk-summary").textContent = lines.join("\n");
+
+    $("app-file-name").value = info.fileName || "";
+    $("app-file-size").value = formatBytes(info.sizeBytes);
+    if (info.packageName) $("app-pkg").value = info.packageName;
+    if (info.versionName) $("app-ver-name").value = info.versionName;
+    if (info.versionCode) $("app-ver-code").value = info.versionCode;
+    if (!$("app-name").value.trim()) {
+      $("app-name").value = info.appLabel || (info.fileName || "").replace(/\.apk$/i, "");
+    }
+
+    if (info.iconDataUrl && !$("app-icon-url").value.trim()) {
+      const box = $("app-icon-preview");
+      if (box) {
+        box.style.background = getGradientForText($("app-name").value || "YM");
+        box.innerHTML = `<img src="${esc(safeUrl(info.iconDataUrl))}" alt="" onerror="this.remove();" />`;
+      }
+    } else {
+      renderFormIconPreview();
+    }
+
+    if (window.YmcApi.isDemoMode()) {
+      $("app-drive-id").value = "DEMO_UPLOAD_" + Date.now();
+      showToast("Demo modunda APK bilgileri okundu.", "success");
       return;
     }
 
-    if (!window.YmcBridge.isNative()) {
-      $("web-apk-input").click();
-      return;
-    }
+    state.isUploadingApk = true;
+    $("upload-progress-wrap").classList.remove("hidden");
+    $("upload-progress-bar").style.width = "5%";
+    $("upload-progress-text").textContent = "Drive oturumu hazırlanıyor...";
 
     try {
-      const info = await window.YmcBridge.pickApkNative();
-      $("picked-apk-summary").classList.remove("hidden");
-      $("picked-apk-summary").textContent =
-        `Seçildi: ${info.fileName} (${formatBytes(info.sizeBytes)})\nPaket: ${info.packageName || "-"} | Sürüm: ${info.versionName} (${info.versionCode})`;
-
-      $("app-file-name").value = info.fileName;
-      $("app-file-size").value = formatBytes(info.sizeBytes);
-      if (info.packageName) $("app-pkg").value = info.packageName;
-      if (info.versionName) $("app-ver-name").value = info.versionName;
-      if (info.versionCode) $("app-ver-code").value = info.versionCode;
-      if (!$("app-name").value.trim()) {
-        $("app-name").value = info.appLabel || info.fileName.replace(/\.apk$/i, "");
-        renderFormIconPreview();
-      }
-
-      if (window.YmcApi.isDemoMode()) {
-        $("app-drive-id").value = "DEMO_UPLOAD_" + Date.now();
-        showToast("Demo modunda APK bilgileri okundu.", "success");
-        return;
-      }
-
-      state.isUploadingApk = true;
-      $("upload-progress-wrap").classList.remove("hidden");
-      $("upload-progress-bar").style.width = "5%";
-      $("upload-progress-text").textContent = "Drive oturumu hazırlanıyor...";
-
       const sessRes = await window.YmcApi.createUploadSession(
         info.fileName,
         "application/vnd.android.package-archive",
@@ -961,17 +1060,130 @@
 
       await window.YmcApi.finalizeDriveFile(fileId);
       $("app-drive-id").value = fileId;
+
+      if (info.iconDataUrl && !$("app-icon-url").value.trim()) {
+        $("upload-progress-bar").style.width = "100%";
+        $("upload-progress-text").textContent = "%100 (Uygulama ikonu Drive'a aktarılıyor...)";
+        try {
+          const iconRes = await window.YmcApi.uploadSmallFile(
+            "icon_" + Date.now() + ".png",
+            "image/png",
+            info.iconDataUrl
+          );
+          if (iconRes && iconRes.imageUrl) {
+            $("app-icon-url").value = iconRes.imageUrl;
+            renderFormIconPreview();
+          }
+        } catch (iconErr) {
+          // İkon yüklenemese dahi APK yüklemesini kesme
+        }
+      }
+
       $("upload-progress-bar").style.width = "100%";
       $("upload-progress-text").textContent = "%100 (Drive'a Yüklendi)";
       showToast("APK Google Drive'a yüklendi! Şimdi bilgileri kontrol edip yayınlayın.", "success", 4200);
+    } catch (err) {
+      $("upload-progress-wrap").classList.add("hidden");
+      throw err;
+    } finally {
+      state.isUploadingApk = false;
+    }
+  }
+
+  async function handlePickAndUploadApk() {
+    if (state.isUploadingApk) {
+      showToast("Devam eden bir APK yüklemesi var.", "warning");
+      return;
+    }
+
+    if (!window.YmcBridge.isNative()) {
+      $("web-apk-input").click();
+      return;
+    }
+
+    try {
+      const info = await window.YmcBridge.pickApkNative();
+      await processPickedApkInfo(info);
     } catch (err) {
       if (err.message !== "CANCELLED") {
         showToast(err.message || "APK yüklenemedi.", "error", 4500);
       }
       $("upload-progress-wrap").classList.add("hidden");
-    } finally {
-      state.isUploadingApk = false;
     }
+  }
+
+  function openInstalledAppPicker() {
+    if (state.isUploadingApk) {
+      showToast("Devam eden bir APK yüklemesi var.", "warning");
+      return;
+    }
+    if (!window.YmcBridge.isNative()) {
+      showToast("Cihazdaki yüklü uygulamaları seçme özelliği Android uygulaması içinde aktiftir.", "warning", 3800);
+      return;
+    }
+
+    const apps = window.YmcBridge.listInstalledUserApps();
+    state.installedPickerApps = Array.isArray(apps) ? apps : [];
+    $("installed-picker-search").value = "";
+    renderInstalledPickerList();
+    $("installed-picker-modal").classList.remove("hidden");
+  }
+
+  function renderInstalledPickerList() {
+    const box = $("installed-picker-list");
+    if (!box) return;
+    const q = ($("installed-picker-search").value || "").trim().toLowerCase();
+    const list = state.installedPickerApps.filter(item => {
+      if (!q) return true;
+      return String(item.appName || "").toLowerCase().includes(q)
+        || String(item.packageName || "").toLowerCase().includes(q);
+    });
+
+    if (list.length === 0) {
+      box.innerHTML = `<div class="empty-box" style="padding:24px 12px;">
+        ${state.installedPickerApps.length === 0 ? "Cihazda seçilebilir kullanıcı uygulaması bulunamadı." : "Aramanızla eşleşen uygulama yok."}
+      </div>`;
+      return;
+    }
+
+    box.innerHTML = list.map(item => `
+      <button class="picker-app-row" data-pick-pkg="${esc(item.packageName)}" type="button">
+        <div class="app-icon" style="width:44px; height:44px; border-radius:12px; font-size:0.95rem; background:${getGradientForText(item.appName)};">
+          ${esc(getInitials(item.appName))}
+        </div>
+        <div style="min-width:0; flex:1;">
+          <div style="font-weight:700; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${esc(item.appName)}
+          </div>
+          <div style="font-size:0.74rem; color:var(--text-muted); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${esc(item.packageName)}
+          </div>
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:3px; font-size:0.74rem; color:var(--text-muted);">
+            <span>v${esc(item.versionName || "1.0")} (${Number(item.versionCode) || 1})</span>
+            <span>• ${esc(formatBytes(item.sizeBytes))}</span>
+            ${item.isSplit ? '<span class="badge badge-amber" style="font-size:0.65rem; padding:1px 6px;">Split APK</span>' : ""}
+          </div>
+        </div>
+        <span style="font-size:0.82rem; font-weight:700; color:var(--primary); flex-shrink:0;">Seç &rarr;</span>
+      </button>
+    `).join("");
+
+    box.querySelectorAll("[data-pick-pkg]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const pkg = btn.dataset.pickPkg;
+        if (!pkg) return;
+        $("installed-picker-modal").classList.add("hidden");
+        showToast("Uygulama APK'sı hazırlanıyor...", "info", 2200);
+        try {
+          const info = await window.YmcBridge.stageInstalledApp(pkg);
+          await processPickedApkInfo(info);
+        } catch (err) {
+          if (err.message !== "CANCELLED") {
+            showToast(err.message || "Uygulama APK'sı alınamadı.", "error", 4500);
+          }
+        }
+      });
+    });
   }
 
   async function handleWebApkFile(file) {
@@ -1239,6 +1451,10 @@
         $("lightbox").classList.add("hidden");
         return true;
       }
+      if (!$("installed-picker-modal").classList.contains("hidden")) {
+        $("installed-picker-modal").classList.add("hidden");
+        return true;
+      }
       if (!$("setup-modal").classList.contains("hidden")) {
         $("setup-modal").classList.add("hidden");
         return true;
@@ -1400,6 +1616,13 @@
       loadCatalog();
       showToast("Mağaza güncelleniyor...");
     });
+    if ($("btn-refresh-library")) {
+      $("btn-refresh-library").addEventListener("click", async () => {
+        showToast("Cihazdaki uygulamalar kontrol ediliyor...");
+        await loadCatalog();
+        refreshInstalledStates();
+      });
+    }
 
     $("search-input").addEventListener("input", (e) => {
       state.searchQuery = e.target.value.trim();
@@ -1442,6 +1665,24 @@
     });
 
     $("btn-pick-apk").addEventListener("click", handlePickAndUploadApk);
+    if ($("btn-pick-installed-app")) {
+      $("btn-pick-installed-app").addEventListener("click", openInstalledAppPicker);
+    }
+    if ($("btn-close-installed-picker")) {
+      $("btn-close-installed-picker").addEventListener("click", () => {
+        $("installed-picker-modal").classList.add("hidden");
+      });
+    }
+    if ($("installed-picker-modal")) {
+      $("installed-picker-modal").addEventListener("click", (e) => {
+        if (e.target === $("installed-picker-modal")) {
+          $("installed-picker-modal").classList.add("hidden");
+        }
+      });
+    }
+    if ($("installed-picker-search")) {
+      $("installed-picker-search").addEventListener("input", renderInstalledPickerList);
+    }
     $("web-apk-input").addEventListener("change", (e) => {
       if (e.target.files && e.target.files[0]) handleWebApkFile(e.target.files[0]);
       e.target.value = "";

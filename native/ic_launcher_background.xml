@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Derin Gece Laciverti Zemin -->
+    <path
+        android:fillColor="#0B1120"
+        android:pathData="M0,0 L108,0 L108,108 L0,108 Z" />
+    <!-- Ust Mavi Ambient Aksan -->
+    <path
+        android:fillColor="#162A56"
+        android:fillAlpha="0.55"
+        android:pathData="M0,0 L92,0 L0,74 Z" />
+    <!-- Alt Zumrut Ambient Aksan -->
+    <path
+        android:fillColor="#0C3836"
+        android:fillAlpha="0.5"
+        android:pathData="M108,34 L108,108 L18,108 Z" />
+</vector>

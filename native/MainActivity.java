@@ -1,24 +1,34 @@
 package com.erhan.ymcstore;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.content.pm.SigningInfo;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.OpenableColumns;
 import android.provider.Settings;
+import android.util.Base64;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import com.getcapacitor.BridgeActivity;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -39,8 +49,12 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.text.Collator;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -48,6 +62,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -57,11 +73,27 @@ public class MainActivity extends BridgeActivity {
     private final Map<String, AtomicBoolean> downloadCancelFlags = new ConcurrentHashMap<>();
     private ActivityResultLauncher<Intent> googleSignInLauncher;
     private ActivityResultLauncher<Intent> apkPickerLauncher;
+    private BroadcastReceiver packageChangeReceiver;
     private String pendingInstallFilePath = null;
+    private volatile long lastResumeEmitMs = 0L;
+
+    private static class ApkMeta {
+        String packageName = "";
+        String versionName = "";
+        long versionCode = 0;
+        String appLabel = "";
+        String iconDataUrl = "";
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        WebView webView = this.getBridge() != null ? this.getBridge().getWebView() : null;
+        if (webView != null) {
+            webView.setBackgroundColor(Color.parseColor("#0b1120"));
+            webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
+        }
 
         googleSignInLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -127,8 +159,41 @@ public class MainActivity extends BridgeActivity {
             }
         });
 
-        WebView webView = this.getBridge().getWebView();
-        webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
+        registerPackageChangeReceiver();
+    }
+
+    private void registerPackageChangeReceiver() {
+        try {
+            packageChangeReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (intent == null) return;
+                    Uri data = intent.getData();
+                    String pkg = data != null ? data.getSchemeSpecificPart() : "";
+                    String act = String.valueOf(intent.getAction());
+                    emitJs("window.__onPackageChanged && window.__onPackageChanged("
+                        + JSONObject.quote(pkg) + ", " + JSONObject.quote(act) + ")");
+                }
+            };
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(Intent.ACTION_PACKAGE_ADDED);
+            filter.addAction(Intent.ACTION_PACKAGE_REPLACED);
+            filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+            filter.addAction(Intent.ACTION_PACKAGE_CHANGED);
+            filter.addDataScheme("package");
+            ContextCompat.registerReceiver(this, packageChangeReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
+        } catch (Exception ignored) {}
+    }
+
+    @Override
+    public void onDestroy() {
+        if (packageChangeReceiver != null) {
+            try {
+                unregisterReceiver(packageChangeReceiver);
+            } catch (Exception ignored) {}
+            packageChangeReceiver = null;
+        }
+        super.onDestroy();
     }
 
     @Override
@@ -141,6 +206,19 @@ public class MainActivity extends BridgeActivity {
                 launchSystemInstaller(f);
             }
         }
+        emitResumeSafe();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus && System.currentTimeMillis() - lastResumeEmitMs > 350L) {
+            emitResumeSafe();
+        }
+    }
+
+    private void emitResumeSafe() {
+        lastResumeEmitMs = System.currentTimeMillis();
         emitJs("window.__onAppResume && window.__onAppResume()");
     }
 
@@ -158,6 +236,278 @@ public class MainActivity extends BridgeActivity {
         }
         return true;
     }
+
+    /* ==================== APK METADATA & BINARY AXML PARSER ==================== */
+
+    private ApkMeta extractApkMeta(File apkFile, boolean extractIcon) {
+        ApkMeta meta = new ApkMeta();
+        if (apkFile == null || !apkFile.exists()) {
+            meta.versionName = "1.0.0";
+            meta.versionCode = 1;
+            return meta;
+        }
+
+        try {
+            PackageManager pm = getPackageManager();
+            int flags = PackageManager.GET_ACTIVITIES | PackageManager.GET_META_DATA;
+            PackageInfo pkgInfo;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                pkgInfo = pm.getPackageArchiveInfo(apkFile.getAbsolutePath(), PackageManager.PackageInfoFlags.of(flags));
+            } else {
+                @SuppressWarnings("deprecation")
+                PackageInfo legacy = pm.getPackageArchiveInfo(apkFile.getAbsolutePath(), flags);
+                pkgInfo = legacy;
+            }
+            if (pkgInfo != null) {
+                if (pkgInfo.packageName != null) meta.packageName = pkgInfo.packageName.trim();
+                if (pkgInfo.versionName != null) meta.versionName = pkgInfo.versionName.trim();
+                meta.versionCode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                    ? pkgInfo.getLongVersionCode()
+                    : pkgInfo.versionCode;
+                if (pkgInfo.applicationInfo != null) {
+                    pkgInfo.applicationInfo.sourceDir = apkFile.getAbsolutePath();
+                    pkgInfo.applicationInfo.publicSourceDir = apkFile.getAbsolutePath();
+                    try {
+                        CharSequence lbl = pkgInfo.applicationInfo.loadLabel(pm);
+                        if (lbl != null) meta.appLabel = lbl.toString().trim();
+                    } catch (Exception ignored) {}
+                    if (extractIcon) {
+                        try {
+                            Drawable icon = pkgInfo.applicationInfo.loadIcon(pm);
+                            if (icon != null) meta.iconDataUrl = drawableToDataUrl(icon, 256);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
+        // Saf Java Binary AndroidManifest.xml (AXML) yedek çözümleyici
+        if (meta.packageName.isEmpty() || meta.versionName.isEmpty() || meta.versionCode <= 0) {
+            ApkMeta axml = parseManifestFromApkZip(apkFile);
+            if (meta.packageName.isEmpty() && !axml.packageName.isEmpty()) {
+                meta.packageName = axml.packageName;
+            }
+            if (meta.versionName.isEmpty() && !axml.versionName.isEmpty()) {
+                meta.versionName = axml.versionName;
+            }
+            if (meta.versionCode <= 0 && axml.versionCode > 0) {
+                meta.versionCode = axml.versionCode;
+            }
+            if (meta.appLabel.isEmpty() && !axml.appLabel.isEmpty()) {
+                meta.appLabel = axml.appLabel;
+            }
+        }
+
+        if (meta.versionName.isEmpty()) meta.versionName = "1.0.0";
+        if (meta.versionCode <= 0) meta.versionCode = 1;
+        return meta;
+    }
+
+    private String drawableToDataUrl(Drawable drawable, int maxDim) {
+        if (drawable == null) return "";
+        Bitmap bmp = null;
+        try {
+            int w = drawable.getIntrinsicWidth();
+            int h = drawable.getIntrinsicHeight();
+            if (w <= 0 || h <= 0) {
+                w = maxDim;
+                h = maxDim;
+            } else if (w > maxDim || h > maxDim) {
+                float scale = Math.min((float) maxDim / w, (float) maxDim / h);
+                w = Math.max(1, Math.round(w * scale));
+                h = Math.max(1, Math.round(h * scale));
+            }
+            bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bmp);
+            drawable.setBounds(0, 0, w, h);
+            drawable.draw(canvas);
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, baos);
+            String b64 = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);
+            return "data:image/png;base64," + b64;
+        } catch (Exception ignored) {
+            return "";
+        } finally {
+            if (bmp != null && !bmp.isRecycled()) {
+                bmp.recycle();
+            }
+        }
+    }
+
+    private static int u16(byte[] b, int off) {
+        return (b[off] & 0xFF) | ((b[off + 1] & 0xFF) << 8);
+    }
+
+    private static int i32(byte[] b, int off) {
+        return (b[off] & 0xFF)
+            | ((b[off + 1] & 0xFF) << 8)
+            | ((b[off + 2] & 0xFF) << 16)
+            | ((b[off + 3] & 0xFF) << 24);
+    }
+
+    private static long u32(byte[] b, int off) {
+        return i32(b, off) & 0xFFFFFFFFL;
+    }
+
+    private static ApkMeta parseManifestFromApkZip(File apkFile) {
+        ApkMeta meta = new ApkMeta();
+        try (ZipFile zf = new ZipFile(apkFile)) {
+            ZipEntry entry = zf.getEntry("AndroidManifest.xml");
+            if (entry == null) return meta;
+            try (InputStream is = zf.getInputStream(entry);
+                 ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                byte[] buf = new byte[16384];
+                int r;
+                long total = 0;
+                while ((r = is.read(buf)) != -1) {
+                    total += r;
+                    if (total > 8 * 1024 * 1024) break;
+                    baos.write(buf, 0, r);
+                }
+                parseManifestAxml(baos.toByteArray(), meta);
+            }
+        } catch (Exception ignored) {}
+        return meta;
+    }
+
+    private static void parseManifestAxml(byte[] data, ApkMeta meta) {
+        if (data == null || data.length < 16) return;
+        int fileType = u16(data, 0);
+        int fileHeaderSize = u16(data, 2);
+        if (fileType != 0x0003) return;
+
+        String[] strings = new String[0];
+        int[] resIds = new int[0];
+        long vcLow = -1;
+        long vcMajor = 0;
+
+        int pos = fileHeaderSize;
+        while (pos + 8 <= data.length) {
+            int chunkType = u16(data, pos);
+            int chunkHeaderSize = u16(data, pos + 2);
+            long chunkSizeL = u32(data, pos + 4);
+            if (chunkSizeL < 8 || pos + chunkSizeL > data.length) break;
+            int chunkSize = (int) chunkSizeL;
+
+            if (chunkType == 0x0001 && pos + 28 <= data.length) {
+                int stringCount = i32(data, pos + 8);
+                int flags = i32(data, pos + 16);
+                int stringsStart = i32(data, pos + 20);
+                boolean isUtf8 = (flags & 0x100) != 0;
+                int offsetsStart = pos + chunkHeaderSize;
+                int stringsBase = pos + stringsStart;
+                if (stringCount > 0 && stringCount < 200000 && offsetsStart + stringCount * 4 <= pos + chunkSize) {
+                    strings = new String[stringCount];
+                    for (int i = 0; i < stringCount; i++) {
+                        int off = i32(data, offsetsStart + i * 4);
+                        int p = stringsBase + off;
+                        if (p < 0 || p >= data.length) {
+                            strings[i] = "";
+                            continue;
+                        }
+                        if (isUtf8) {
+                            if (p < data.length && (data[p++] & 0x80) != 0) p++;
+                            int byteLen = p < data.length ? (data[p++] & 0xFF) : 0;
+                            if ((byteLen & 0x80) != 0 && p < data.length) {
+                                byteLen = ((byteLen & 0x7F) << 8) | (data[p++] & 0xFF);
+                            }
+                            if (byteLen > 0 && p + byteLen <= data.length) {
+                                strings[i] = new String(data, p, byteLen, StandardCharsets.UTF_8);
+                            } else {
+                                strings[i] = "";
+                            }
+                        } else {
+                            int charLen = p + 2 <= data.length ? u16(data, p) : 0;
+                            p += 2;
+                            if ((charLen & 0x8000) != 0 && p + 2 <= data.length) {
+                                charLen = ((charLen & 0x7FFF) << 16) | u16(data, p);
+                                p += 2;
+                            }
+                            int byteLen = charLen * 2;
+                            if (byteLen > 0 && p + byteLen <= data.length) {
+                                strings[i] = new String(data, p, byteLen, StandardCharsets.UTF_16LE);
+                            } else {
+                                strings[i] = "";
+                            }
+                        }
+                    }
+                }
+            } else if (chunkType == 0x0180) {
+                int count = (chunkSize - chunkHeaderSize) / 4;
+                if (count > 0 && count < 200000) {
+                    resIds = new int[count];
+                    for (int i = 0; i < count; i++) {
+                        resIds[i] = i32(data, pos + chunkHeaderSize + i * 4);
+                    }
+                }
+            } else if (chunkType == 0x0102) {
+                int ext = pos + chunkHeaderSize;
+                if (ext + 20 <= pos + chunkSize) {
+                    int nameIdx = i32(data, ext + 4);
+                    int attrStart = u16(data, ext + 8);
+                    int attrSize = u16(data, ext + 10);
+                    int attrCount = u16(data, ext + 12);
+                    String tagName = (nameIdx >= 0 && nameIdx < strings.length) ? strings[nameIdx] : "";
+
+                    int attrBase = ext + attrStart;
+                    if (attrSize >= 20) {
+                        for (int i = 0; i < attrCount; i++) {
+                            int a = attrBase + i * attrSize;
+                            if (a + 20 > pos + chunkSize) break;
+                            int attrNameIdx = i32(data, a + 4);
+                            int rawValIdx = i32(data, a + 8);
+                            int dataType = data[a + 15] & 0xFF;
+                            int valData = i32(data, a + 16);
+
+                            String attrName = (attrNameIdx >= 0 && attrNameIdx < strings.length) ? strings[attrNameIdx] : "";
+                            int resId = (attrNameIdx >= 0 && attrNameIdx < resIds.length) ? resIds[attrNameIdx] : 0;
+
+                            String strVal = null;
+                            if (rawValIdx >= 0 && rawValIdx < strings.length) {
+                                strVal = strings[rawValIdx];
+                            } else if (dataType == 0x03 && valData >= 0 && valData < strings.length) {
+                                strVal = strings[valData];
+                            }
+
+                            if ("manifest".equals(tagName)) {
+                                if ("package".equals(attrName) && strVal != null && !strVal.isEmpty()) {
+                                    meta.packageName = strVal.trim();
+                                } else if (resId == 0x0101021b || "versionCode".equals(attrName)) {
+                                    if (dataType == 0x10 || dataType == 0x11) {
+                                        vcLow = valData & 0xFFFFFFFFL;
+                                    } else if (strVal != null) {
+                                        try { vcLow = Long.parseLong(strVal.trim()); } catch (Exception ignored) {}
+                                    }
+                                } else if (resId == 0x01010576 || "versionCodeMajor".equals(attrName)) {
+                                    if (dataType == 0x10 || dataType == 0x11) {
+                                        vcMajor = valData & 0xFFFFFFFFL;
+                                    }
+                                } else if (resId == 0x0101021c || "versionName".equals(attrName)) {
+                                    if (strVal != null && !strVal.isEmpty()) {
+                                        meta.versionName = strVal.trim();
+                                    } else if (dataType == 0x10) {
+                                        meta.versionName = String.valueOf(valData);
+                                    }
+                                }
+                            } else if ("application".equals(tagName)) {
+                                if ((resId == 0x01010001 || "label".equals(attrName)) && dataType == 0x03 && strVal != null && meta.appLabel.isEmpty()) {
+                                    meta.appLabel = strVal.trim();
+                                }
+                            }
+                        }
+                    }
+                    if ("application".equals(tagName) && !meta.packageName.isEmpty()) break;
+                }
+            }
+            pos += chunkSize;
+        }
+        if (vcLow >= 0) {
+            meta.versionCode = (vcMajor << 32) | vcLow;
+        }
+    }
+
+    /* ==================== APK SEÇME VE CİHAZ UYGULAMALARI ==================== */
 
     private void inspectAndStagePickedApk(Uri uri) {
         try {
@@ -196,50 +546,83 @@ public class MainActivity extends BridgeActivity {
                 if (fileSize <= 0) fileSize = total;
             }
 
-            String packageName = "";
-            String versionName = "1.0.0";
-            long versionCode = 1;
-            String appLabel = "";
-
-            try {
-                PackageManager pm = getPackageManager();
-                PackageInfo pkgInfo;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    pkgInfo = pm.getPackageArchiveInfo(stagedFile.getAbsolutePath(), PackageManager.PackageInfoFlags.of(0));
-                } else {
-                    pkgInfo = pm.getPackageArchiveInfo(stagedFile.getAbsolutePath(), 0);
-                }
-                if (pkgInfo != null) {
-                    packageName = pkgInfo.packageName != null ? pkgInfo.packageName : "";
-                    versionName = pkgInfo.versionName != null ? pkgInfo.versionName : "1.0.0";
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        versionCode = pkgInfo.getLongVersionCode();
-                    } else {
-                        versionCode = pkgInfo.versionCode;
-                    }
-                    if (pkgInfo.applicationInfo != null) {
-                        pkgInfo.applicationInfo.sourceDir = stagedFile.getAbsolutePath();
-                        pkgInfo.applicationInfo.publicSourceDir = stagedFile.getAbsolutePath();
-                        CharSequence lbl = pkgInfo.applicationInfo.loadLabel(pm);
-                        if (lbl != null) appLabel = lbl.toString();
-                    }
-                }
-            } catch (Exception ignored) {}
+            ApkMeta meta = extractApkMeta(stagedFile, true);
 
             JSONObject obj = new JSONObject();
             obj.put("localPath", stagedFile.getAbsolutePath());
             obj.put("fileName", fileName);
             obj.put("sizeBytes", fileSize);
-            obj.put("packageName", packageName);
-            obj.put("versionName", versionName);
-            obj.put("versionCode", versionCode);
-            obj.put("appLabel", appLabel);
+            obj.put("packageName", meta.packageName);
+            obj.put("versionName", meta.versionName);
+            obj.put("versionCode", meta.versionCode);
+            obj.put("appLabel", meta.appLabel);
+            obj.put("iconDataUrl", meta.iconDataUrl);
 
             emitJs("window.__onApkPicked && window.__onApkPicked(" + obj.toString() + ")");
         } catch (Exception e) {
             emitJs("window.__onApkPickError && window.__onApkPickError(" + JSONObject.quote(String.valueOf(e.getMessage())) + ")");
         }
     }
+
+    private void stageInstalledAppInternal(String packageName) {
+        try {
+            PackageManager pm = getPackageManager();
+            PackageInfo pi = pm.getPackageInfo(packageName, 0);
+            if (pi == null || pi.applicationInfo == null || pi.applicationInfo.publicSourceDir == null) {
+                throw new Exception("Uygulama APK dosyasına erişilemedi.");
+            }
+            File srcApk = new File(pi.applicationInfo.publicSourceDir);
+            if (!srcApk.exists() || !srcApk.canRead()) {
+                throw new Exception("APK kaynağı okunamadı.");
+            }
+
+            File cacheDir = new File(getCacheDir(), "staged_uploads");
+            if (!cacheDir.exists()) cacheDir.mkdirs();
+            File stagedFile = new File(cacheDir, "upload_" + System.currentTimeMillis() + ".apk");
+
+            long total = 0;
+            try (InputStream in = new FileInputStream(srcApk);
+                 OutputStream out = new FileOutputStream(stagedFile)) {
+                byte[] buf = new byte[65536];
+                int len;
+                while ((len = in.read(buf)) != -1) {
+                    out.write(buf, 0, len);
+                    total += len;
+                }
+            }
+
+            CharSequence lbl = pi.applicationInfo.loadLabel(pm);
+            String appLabel = lbl != null ? lbl.toString().trim() : packageName;
+            String versionName = (pi.versionName != null && !pi.versionName.trim().isEmpty()) ? pi.versionName.trim() : "1.0.0";
+            long versionCode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P ? pi.getLongVersionCode() : pi.versionCode;
+            String iconDataUrl = "";
+            try {
+                Drawable icon = pi.applicationInfo.loadIcon(pm);
+                if (icon != null) iconDataUrl = drawableToDataUrl(icon, 256);
+            } catch (Exception ignored) {}
+
+            String safeBase = appLabel.replaceAll("[^a-zA-Z0-9._-]", "_").replaceAll("_+", "_");
+            if (safeBase.isEmpty() || safeBase.equals("_")) safeBase = packageName;
+            String fileName = safeBase + "_v" + versionName.replaceAll("[^a-zA-Z0-9._-]", "_") + ".apk";
+
+            JSONObject obj = new JSONObject();
+            obj.put("localPath", stagedFile.getAbsolutePath());
+            obj.put("fileName", fileName);
+            obj.put("sizeBytes", total);
+            obj.put("packageName", packageName);
+            obj.put("versionName", versionName);
+            obj.put("versionCode", versionCode);
+            obj.put("appLabel", appLabel);
+            obj.put("iconDataUrl", iconDataUrl);
+            obj.put("isSplit", pi.applicationInfo.splitPublicSourceDirs != null && pi.applicationInfo.splitPublicSourceDirs.length > 0);
+
+            emitJs("window.__onApkPicked && window.__onApkPicked(" + obj.toString() + ")");
+        } catch (Exception e) {
+            emitJs("window.__onApkPickError && window.__onApkPickError(" + JSONObject.quote(String.valueOf(e.getMessage())) + ")");
+        }
+    }
+
+    /* ==================== İNDİRME, YÜKLEME & KURULUM ==================== */
 
     private void downloadApkInternal(String appId, String rawUrl, String fileName) {
         AtomicBoolean cancelFlag = new AtomicBoolean(false);
@@ -317,10 +700,16 @@ public class MainActivity extends BridgeActivity {
                 conn.disconnect();
             }
 
+            ApkMeta meta = extractApkMeta(outFile, false);
+
             emitJs("window.__onApkDownloadProgress && window.__onApkDownloadProgress("
                 + JSONObject.quote(appId) + ", 100, " + downloaded + ", " + downloaded + ")");
             emitJs("window.__onApkDownloaded && window.__onApkDownloaded("
-                + JSONObject.quote(appId) + ", " + JSONObject.quote(outFile.getAbsolutePath()) + ")");
+                + JSONObject.quote(appId) + ", "
+                + JSONObject.quote(outFile.getAbsolutePath()) + ", "
+                + JSONObject.quote(meta.packageName) + ", "
+                + JSONObject.quote(meta.versionName) + ", "
+                + meta.versionCode + ")");
 
             final File finalApk = outFile;
             runOnUiThread(() -> installApkFile(finalApk));
@@ -630,6 +1019,51 @@ public class MainActivity extends BridgeActivity {
                 }
             } catch (Exception ignored) {}
             return result.toString();
+        }
+
+        @JavascriptInterface
+        public String listInstalledUserApps() {
+            List<JSONObject> items = new ArrayList<>();
+            try {
+                PackageManager pm = getPackageManager();
+                List<PackageInfo> pkgs = pm.getInstalledPackages(0);
+                String selfPkg = getPackageName();
+                for (PackageInfo pi : pkgs) {
+                    if (pi == null || pi.applicationInfo == null) continue;
+                    ApplicationInfo ai = pi.applicationInfo;
+                    if (selfPkg.equals(pi.packageName)) continue;
+                    if ((ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0) continue;
+                    if (ai.publicSourceDir == null) continue;
+                    File apk = new File(ai.publicSourceDir);
+                    if (!apk.exists()) continue;
+
+                    CharSequence lbl = ai.loadLabel(pm);
+                    String appName = lbl != null ? lbl.toString().trim() : pi.packageName;
+                    if (appName.isEmpty()) appName = pi.packageName;
+                    long vc = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P ? pi.getLongVersionCode() : pi.versionCode;
+                    boolean isSplit = ai.splitPublicSourceDirs != null && ai.splitPublicSourceDirs.length > 0;
+
+                    JSONObject obj = new JSONObject();
+                    obj.put("appName", appName);
+                    obj.put("packageName", pi.packageName);
+                    obj.put("versionName", pi.versionName != null ? pi.versionName : "1.0");
+                    obj.put("versionCode", vc);
+                    obj.put("sizeBytes", apk.length());
+                    obj.put("isSplit", isSplit);
+                    items.add(obj);
+                }
+                final Collator trCollator = Collator.getInstance(new Locale("tr", "TR"));
+                Collections.sort(items, (a, b) -> trCollator.compare(a.optString("appName", ""), b.optString("appName", "")));
+            } catch (Exception ignored) {}
+
+            JSONArray out = new JSONArray();
+            for (JSONObject o : items) out.put(o);
+            return out.toString();
+        }
+
+        @JavascriptInterface
+        public void stageInstalledAppApk(String packageName) {
+            executor.execute(() -> stageInstalledAppInternal(packageName));
         }
 
         @JavascriptInterface

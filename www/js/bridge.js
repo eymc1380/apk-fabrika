@@ -12,6 +12,7 @@ window.YmcBridge = (() => {
   const downloadCallbacks = new Map();
   const uploadCallbacks = new Map();
   const resumeListeners = new Set();
+  const packageChangeListeners = new Set();
 
   // Native -> JS Global Kancalar
   window.__onNativeGoogleSignInSuccess = (idToken) => {
@@ -67,9 +68,16 @@ window.YmcBridge = (() => {
     if (cb && cb.onProgress) cb.onProgress(percent, downloaded, total);
   };
 
-  window.__onApkDownloaded = (appId, localPath) => {
+  window.__onApkDownloaded = (appId, localPath, packageName, versionName, versionCode) => {
     const cb = downloadCallbacks.get(appId);
-    if (cb && cb.onDone) cb.onDone(localPath);
+    if (cb && cb.onDone) {
+      cb.onDone({
+        localPath: localPath || "",
+        packageName: packageName || "",
+        versionName: versionName || "",
+        versionCode: Number(versionCode) || 0
+      });
+    }
     downloadCallbacks.delete(appId);
   };
 
@@ -109,6 +117,15 @@ window.YmcBridge = (() => {
   };
 
   window.__onAppResume = () => {
+    resumeListeners.forEach(fn => {
+      try { fn(); } catch (e) {}
+    });
+  };
+
+  window.__onPackageChanged = (packageName, action) => {
+    packageChangeListeners.forEach(fn => {
+      try { fn(packageName, action); } catch (e) {}
+    });
     resumeListeners.forEach(fn => {
       try { fn(); } catch (e) {}
     });
@@ -191,7 +208,7 @@ window.YmcBridge = (() => {
     }
     // Web tarayıcıda doğrudan yeni sekmede indir
     window.open(downloadUrl, "_blank", "noopener");
-    if (handlers.onDone) handlers.onDone("");
+    if (handlers.onDone) handlers.onDone({ localPath: "", packageName: "", versionName: "", versionCode: 0 });
     return false;
   }
 
@@ -210,6 +227,30 @@ window.YmcBridge = (() => {
     } catch (e) {
       return {};
     }
+  }
+
+  function listInstalledUserApps() {
+    if (!native || !native.listInstalledUserApps) {
+      return [];
+    }
+    try {
+      const parsed = JSON.parse(native.listInstalledUserApps());
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function stageInstalledApp(packageName) {
+    return new Promise((resolve, reject) => {
+      if (!native || !native.stageInstalledAppApk) {
+        reject(new Error("NOT_NATIVE"));
+        return;
+      }
+      apkPickResolver = resolve;
+      apkPickRejecter = reject;
+      native.stageInstalledAppApk(packageName);
+    });
   }
 
   function launchApp(packageName) {
@@ -278,6 +319,11 @@ window.YmcBridge = (() => {
     return () => resumeListeners.delete(fn);
   }
 
+  function onPackageChanged(fn) {
+    packageChangeListeners.add(fn);
+    return () => packageChangeListeners.delete(fn);
+  }
+
   return {
     isNative,
     getNativeInfo,
@@ -285,12 +331,15 @@ window.YmcBridge = (() => {
     downloadAndInstall,
     cancelDownload,
     getInstalledAppsStatus,
+    listInstalledUserApps,
+    stageInstalledApp,
     launchApp,
     uninstallApp,
     canInstallPackages,
     openInstallPermissionSettings,
     pickApkNative,
     uploadLocalApkToUrl,
-    onResume
+    onResume,
+    onPackageChanged
   };
 })();

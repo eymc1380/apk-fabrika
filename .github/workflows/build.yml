@@ -38,19 +38,37 @@ jobs:
             cp native/*.java android/app/src/main/java/$PKG_PATH/
           fi
 
-          mkdir -p android/app/src/main/res/xml
+          # Capacitor varsayılan ikon ve splash dosyalarını temizle (drawable-v24 vb. çakışmaları önle)
+          rm -rf android/app/src/main/res/drawable-v24/ic_launcher* \
+                 android/app/src/main/res/drawable/ic_launcher* \
+                 android/app/src/main/res/drawable/splash.png \
+                 android/app/src/main/res/drawable-land-* \
+                 android/app/src/main/res/drawable-port-* \
+                 android/app/src/main/res/mipmap-*/ic_launcher* \
+                 android/app/src/main/res/values/ic_launcher_background.xml
+
+          mkdir -p android/app/src/main/res/xml android/app/src/main/res/values-v31 android/app/src/main/res/drawable
           [ -f native/file_paths.xml ] && cp native/file_paths.xml android/app/src/main/res/xml/file_paths.xml || true
           [ -f native/colors.xml ] && cp native/colors.xml android/app/src/main/res/values/colors.xml || true
           [ -f native/styles.xml ] && cp native/styles.xml android/app/src/main/res/values/styles.xml || true
+          [ -f native/styles-v31.xml ] && cp native/styles-v31.xml android/app/src/main/res/values-v31/styles.xml || true
           [ -f native/launch_screen.xml ] && cp native/launch_screen.xml android/app/src/main/res/drawable/launch_screen.xml || true
+
+          for d in mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi; do
+            if [ -d "native/$d" ]; then
+              mkdir -p "android/app/src/main/res/$d"
+              cp "native/$d/"*.png "android/app/src/main/res/$d/" || true
+            fi
+          done
 
           if [ -f native/ic_launcher_foreground.xml ]; then
             cp native/ic_launcher_foreground.xml android/app/src/main/res/drawable/ic_launcher_foreground.xml
+            [ -f native/ic_launcher_background.xml ] && cp native/ic_launcher_background.xml android/app/src/main/res/drawable/ic_launcher_background.xml || true
             mkdir -p android/app/src/main/res/mipmap-anydpi-v26
             cat << 'EOF' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           <?xml version="1.0" encoding="utf-8"?>
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@color/splash_bg"/>
+              <background android:drawable="@drawable/ic_launcher_background"/>
               <foreground android:drawable="@drawable/ic_launcher_foreground"/>
           </adaptive-icon>
           EOF
