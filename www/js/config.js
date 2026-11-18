@@ -15,10 +15,10 @@ window.YMC_DEFAULT_CONFIG = {
   SPREADSHEET_ID: "1XbpgH2AqGqR1PNpS92AtlcgEqsa4oMUKPi9kZyMcxYc",
 
   // 1. Google Apps Script Web Uygulaması URL'si (sonu /exec ile biter)
-  APPS_SCRIPT_URL: "",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxL_yMdKOOVw7BqTVxupT6BKHDLfAzzWFdKr_jsR5zWL-LC43hcgrfuDyuKCB_Uepqo/exec",
 
   // 2. Google Cloud OAuth 2.0 Web Client ID ("Google ile Giriş" butonu için)
-  GOOGLE_WEB_CLIENT_ID: ""
+  GOOGLE_WEB_CLIENT_ID: "234915977349-hd6e8aqmucav79g37uvsl9m5afr5165t.apps.googleusercontent.com"
 };
 
 window.YmcConfig = {
