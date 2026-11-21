@@ -34,7 +34,7 @@ jobs:
 
           # Native Java ve Manifest dosyalarını kopyala
           cp -r native/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
-          cp -r native/*.java android/app/src/main/java/com/erhan/apkfabrika/
+          cp -r native/*.java android/app/src/main/java/com/erhan/sehirrehberi/
           
           # Renk, stil ve splash dosyalarını yerleştir
           [ -f native/colors.xml ] && cp native/colors.xml android/app/src/main/res/values/colors.xml || true
@@ -92,10 +92,10 @@ jobs:
 
       - name: 7. İmzalı ve Hizalanmış APK'yı Kaydet
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk sms-fabrika-signed.apk
+          cp android/app/build/outputs/apk/release/app-release.apk sehir-rehberi-signed.apk
 
       - name: 8. APK'yı Yükle (Artifact)
         uses: actions/upload-artifact@v4
         with:
-          name: sms-fabrika-signed
-          path: sms-fabrika-signed.apk
+          name: sehir-rehberi-signed
+          path: sehir-rehberi-signed.apk

@@ -1,4 +1,4 @@
-package com.erhan.apkfabrika;
+package com.erhan.sehirrehberi;
 
 import android.Manifest;
 import android.content.ClipData;
