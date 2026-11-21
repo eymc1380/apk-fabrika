@@ -596,9 +596,68 @@
     }
     .toast.hidden { display: none; }
     .hidden { display: none !important; }
+
+    /* Açılış Animasyonu */
+    #splashOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #0f1419;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      transition: opacity 0.45s ease, visibility 0.45s ease;
+    }
+    #splashOverlay.fade-out {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .splash-logo {
+      width: 84px;
+      height: 84px;
+      animation: splashBounce 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .splash-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fef3c7;
+      letter-spacing: 0.3px;
+      opacity: 0;
+      animation: splashFadeUp 0.6s 0.25s ease forwards;
+    }
+    .splash-sub {
+      font-size: 12.5px;
+      color: #d97706;
+      font-weight: 600;
+      opacity: 0;
+      animation: splashFadeUp 0.6s 0.45s ease forwards;
+    }
+    @keyframes splashBounce {
+      0% { transform: scale(0.55) translateY(16px); opacity: 0; }
+      65% { transform: scale(1.08) translateY(-4px); opacity: 1; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    @keyframes splashFadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
+
+  <!-- Açılış Animasyonu -->
+  <div id="splashOverlay">
+    <svg class="splash-logo" viewBox="0 0 108 108">
+      <path fill="#d97706" d="M54,14 C35.2,14 20,29.2 20,48 C20,72.5 54,96 54,96 C54,96 88,72.5 88,48 C88,29.2 72.8,14 54,14 Z"/>
+      <circle cx="54" cy="47" r="17" fill="#fef3c7"/>
+      <path fill="#78350f" d="M42,56 L42,46 Q54,35 66,46 L66,56 L60.5,56 L60.5,48.5 Q54,42 47.5,48.5 L47.5,56 Z"/>
+    </svg>
+    <div class="splash-title">Şehir Gezi & Lezzet Rehberi</div>
+    <div class="splash-sub">Mardin • Tarihi Mekanlar, Lezzetler & Harita</div>
+  </div>
 
   <!-- Header -->
   <header class="header">
@@ -1002,6 +1061,7 @@
             coords: "37.3130, 40.7365",
             address: "1. Cadde ve Alt Sokaklar (Bakırcılar, Revaklı Çarşı), Artuklu",
             artwork: "mansion",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Bazaar%20in%20Mardin%20(3).jpg?width=800",
             summary: "Bakır ustaları, baharatçılar, bıttım sabunu dükkanları ve evlerin altından geçen serin taş tüneller (abbara).",
             history: "Mardin'in yüzyıllardır ticaret merkezi olan Tarihi Çarşılar; Kayseriye Bedesteni, Revaklı Çarşı, Marangozlar ve Bakırcılar Çarşısı'ndan oluşur. Sokakları birbirine bağlayan ve yazın serinlik sağlayan taş kemerli geçitlere 'abbara' adı verilir.",
             hours: "09:00 - 20:00",
@@ -1017,6 +1077,7 @@
             coords: "37.1525, 41.2422",
             address: "Midyat - Nusaybin Karayolu Üzeri, Nusaybin / Mardin",
             artwork: "nature",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mardin%2C%20Mardin%20Merkez-Mardin%2C%20Turkey%20-%20panoramio%20(12).jpg?width=800",
             summary: "Kurak Mezopotamya coğrafyasının ortasında buz gibi kaynak suları ve söğüt ağaçlarıyla doğal bir vaha.",
             history: "Midyat ile Nusaybin arasındaki derin vadiden doğan Beyazsu, berrak kaynak suları ve su üzerine kurulu tahta şark köşeleriyle bölgenin en sevilen dinlenme alanıdır.",
             hours: "Gün boyu açık",
@@ -1032,6 +1093,7 @@
             coords: "37.5411, 40.8886",
             address: "Savur İlçe Merkezi, Savur / Mardin",
             artwork: "ruins",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mardin%2C%20Mardin%20Merkez-Mardin%2C%20Turkey%20-%20panoramio%20(2)%20(cropped).jpg?width=800",
             summary: "Yeşil Savur Çayı vadisine bakan tarihi kale, taş konaklar ve 'Küçük Mardin' atmosferi.",
             history: "Mardin'in kuzeydoğusunda yer alan Savur, dik yamaçlara kurulmuş taş evleri ve hemen altındaki yemyeşil vadisiyle 'Küçük Mardin' olarak anılır. Hacı Abdullah Bey Konağı, bölgenin sivil mimari zarafetini yansıtır.",
             hours: "Gün boyu",
@@ -1047,6 +1109,7 @@
             coords: "37.4985, 40.9297",
             address: "Dereiçi Köyü, Savur / Mardin",
             artwork: "monastery",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mor%20Yuhanon%20Church%20at%20Qeleth%20(Kellef)%2C%20Tur%20Abdin.jpg?width=800",
             summary: "Üç farklı kilise ve manastır kalıntısına ev sahipliği yapan, bağları ve taş sokaklarıyla huzurlu köy.",
             history: "Savur'a yaklaşık 10 km mesafedeki Kıllıt (Dereiçi) köyü, Süryani Ortodoks, Katolik ve Protestan kiliselerini bir arada barındırmasıyla benzersizdir. Bağcılık ve şarap kültürüyle de tanınır.",
             hours: "Gün boyu (Kilise ziyareti için gündüz saatleri)",
@@ -1066,6 +1129,7 @@
             coords: "37.3042, 40.7931",
             address: "Deyrulzafaran Manastırı Avlusu İçi, Artuklu / Mardin",
             artwork: "monastery",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Deyrulzaferan%20P1030920%2020080501122611.JPG?width=800",
             signature: "Safranlı Çay, Tarçınlı Süryani Çayı, Kliçe (Süryani Çöreği), Badem Şekeri",
             summary: "Tarihi manastırın taş kemerli avlusunda, yüzyıllık atmosfer eşliğinde otantik içecek ve atıştırmalık molası.",
             history: "Deyrulzafaran Manastırı ziyareti sırasında veya sonrasında hemen avlu içerisindeki gölgelik taş bölümde hizmet verir. Bölgeye özgü safranlı ve kakuleli çaylarıyla ziyaretçilerden en yüksek puanları alan duraklardan biridir.",
@@ -1082,6 +1146,7 @@
             coords: "37.3138, 40.7324",
             address: "1. Cadde No:517, Cumhuriyet Meydanı Yakını, Artuklu / Mardin",
             artwork: "mansion",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mardin%2C%20Mardin%20Merkez-Mardin%2C%20Turkey%20-%20panoramio%20(2)%20(cropped).jpg?width=800",
             signature: "Kaburga Dolması, Sembusek, Alluciye (Erik Yahnisi), İkbebet, Kişk Çorbası",
             summary: "1888 yapımı tarihi taş konakta, Mardin gastronomisini dünyaya tanıtan ödüllü yöresel mutfak.",
             history: "Mardin mutfağının unutulmaya yüz tutmuş yemeklerini yeniden canlandıran Şef Ebru Baybara Demir tarafından hayata geçirilen konak, tarihi taş avlusunda geleneksel Mardin ve Süryani yemekleri sunar.",
@@ -1098,6 +1163,7 @@
             coords: "37.3121, 40.7341",
             address: "Medrese Mah., 1. Cadde Altı Tarihi Sokak, Artuklu / Mardin",
             artwork: "medrese",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mardin%2C%20Mardin%20Merkez-Mardin%2C%20Turkey%20-%20panoramio%20(12).jpg?width=800",
             signature: "İncirli Kuzu, Hımmıs, Firik Pilavı, Sembusek, Süryani Şarabı Eşleşmeleri",
             summary: "Tarihi Mardin sokaklarının içinde, özenle restore edilmiş taş konakta butik yöresel lezzetler.",
             history: "Sıcak atmosferi, taş kemerli salonu ve geleneksel tariflere sadık kalarak sunduğu modern dokunuşlu Mardin yemekleriyle yüksek ziyaretçi memnuniyetine sahiptir.",
@@ -1114,6 +1180,7 @@
             coords: "37.4195, 41.3698",
             address: "Ortaçarşı Mah., Eski Midyat, Midyat / Mardin",
             artwork: "mansion",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Midyat%20(6).jpg?width=800",
             signature: "Midyat Tava, İçli Köfte, Süryani Mezeleri, Mırra",
             summary: "Eski Midyat'ta 150 yıllık tarihi konak terasında, taş evler manzaralı otantik Midyat mutfağı.",
             history: "Midyat Konukevi ve Gelüşke Hanı'na yürüme mesafesindeki tarihi taş konakta, hem konaklama hem de dışarıdan gelen misafirlere yönelik yüksek puanlı restoran hizmeti sunar.",
@@ -1130,6 +1197,7 @@
             coords: "37.3125, 40.7310",
             address: "1. Cadde, Mezopotamya Ovası Cephesi, Artuklu / Mardin",
             artwork: "mansion",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mardin%20View%20from%20Olgunla%C5%9Fma%20Enstit%C3%BCleri%20to%20Castle%20and%20Zinciriye%20Medresesi%20in%202025%208894.jpg?width=800",
             signature: "Mardin Tabağı (İrok, İkbebet, Sembusek), Kaburga Dolması, Harire Tatlısı",
             summary: "Mezopotamya Ovası'na bakan geniş taş terasıyla ünlü, tarihi konakta fine-dining yöresel deneyim.",
             history: "Eski Mardin'in en güzel manzaralı teraslarından birine sahip olan Bağdadi, taş işçiliğiyle süslü iç mekanı ve zengin yöresel menüsüyle öne çıkar.",
@@ -1146,6 +1214,7 @@
             coords: "37.3136, 40.7355",
             address: "Ulucami Mah., Zinciriye Medresesi Altı, Artuklu / Mardin",
             artwork: "dome",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mardin%20P1030364%2020080423110050.JPG?width=800",
             summary: "Zinciriye Medresesi ve Ulu Camii'nin hemen yanında, tarihi çarşı ve ova manzaralı teras restoran & kafe.",
             history: "Tarihi dokunun tam kalbinde yer alan mekan, hem Mardin yöresel yemekleri hem de serpme kahvaltı ve dibek kahvesi molaları için ziyaretçilerin favorisidir.",
             hours: "08:30 - 23:00",
@@ -1162,6 +1231,7 @@
             coords: "37.3132, 40.7372",
             address: "1. Cadde, Tarihi Çarşı Girişi, Artuklu / Mardin",
             artwork: "mosque",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Bazaar%20in%20Mardin%20(3).jpg?width=800",
             signature: "Mardin Zırh Kebabı, Urfa & Adana Kebap, Közlenmiş Soğan ve Sumaklı Salata",
             summary: "Eski Mardin'in köklü esnaf lokantalarından; zırhla çekilmiş kuzu etinden meşhur Mardin kebabı.",
             history: "Yıllardır aynı noktada hizmet veren Kebapçı Rıdo, süslü sunumlardan ziyade lezzete odaklanan samimi atmosferi ve taze zırh kebabıyla yerel halkın da ilk tercihidir.",
@@ -1178,6 +1248,7 @@
             coords: "37.4198, 41.3712",
             address: "Eski Midyat Çarşısı, Gelüşke Hanı İçi, Midyat / Mardin",
             artwork: "mansion",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Deyrulumur%20avlu%202.jpg?width=800",
             signature: "Sac Kavurma, Midyat Kebabı, Menengiç & Dibek Kahvesi",
             summary: "1903 yapımı tarihi kervansaray avlusunda, taş kemerler altında yemek ve kahve keyfi.",
             history: "Eski Midyat'ın en önemli tarihi hanlarından Gelüşke Hanı'nın avlusunda yer alır. Telkari çarşısını gezdikten sonra tarihi taş atmosferde yemek yemek için en otantik noktadır.",
@@ -1194,6 +1265,7 @@
             coords: "37.1525, 41.2422",
             address: "Beyazsu Vadisi, Midyat - Nusaybin Yolu, Nusaybin / Mardin",
             artwork: "nature",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mardin%2C%20Mardin%20Merkez-Mardin%2C%20Turkey%20-%20panoramio%20(12).jpg?width=800",
             summary: "Buz gibi akan kaynak suyunun tam üzerine kurulu tahta köşklerde taze alabalık ve sac tava.",
             history: "Beyazsu Vadisi boyunca sıralanan su üstü tesisler, özellikle yaz sıcağında ayaklarınızı serin suya yakın tutarak yemek yiyebileceğiniz benzersiz bir doğa deneyimi sunar.",
             hours: "08:00 - 22:00",
@@ -1210,6 +1282,7 @@
             coords: "37.3129, 40.7358",
             address: "Ulucami Mah., 1. Cadde No:246, Artuklu / Mardin",
             artwork: "mosque",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mardin%20Ulu%20Cami%20DSCF0534.jpg?width=800",
             signature: "Tandır, Kaburga Dolması, Dobo (Süryani Kuzu Yemeği), Künefe",
             summary: "Ulu Camii'ye birkaç adım mesafede, kemerli tarihi taş mekanda geleneksel Mardin yemekleri.",
             history: "Tarihi çarşı gezisi sırasında kolayca ulaşılabilen konumu, taş tonozlu iç salonu ve zengin et yemekleriyle öne çıkar.",
@@ -1226,6 +1299,7 @@
             coords: "37.3098, 40.7232",
             address: "Kasımiye Medresesi Çıkışı, Cumhuriyet Mah., Artuklu / Mardin",
             artwork: "medrese",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mardin%20Kas%C4%B1miye%20Medresesi-%C3%96mer%20Gemici.jpg?width=800",
             summary: "Kasımiye Medresesi'nin hemen yanında, Mezopotamya gün batımına karşı mırra ve dibek kahvesi.",
             history: "Medrese ziyaretinden çıkanların gün batımını izlemek için uğradığı seyir noktasında geleneksel Mardin dibek kahvesi, mırra ve badem şekeri ikram edilir.",
             hours: "09:00 - 22:00",
@@ -1242,6 +1316,7 @@
             coords: "37.3134, 40.7340",
             address: "1. Cadde, Eski Mardin Çarşısı, Artuklu / Mardin",
             artwork: "mansion",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mardin%2C%20Mardin%20Merkez-Mardin%2C%20Turkey%20-%20panoramio%20(2)%20(cropped).jpg?width=800",
             signature: "Kervansaray Kahvaltısı, Mırra, Harire Tatlısı, Cevizli Sucuk",
             summary: "Tarihi taş kervansaray atmosferinde yöresel kahvaltı ve akşamüstü kahve molası.",
             history: "Eski Mardin'in ana caddesi üzerinde, yüksek taş kemerli avlusuyla sıcaklardan kaçıp soluklanabileceğiniz tarihi bir durak.",
@@ -1981,7 +2056,32 @@
       }
     });
 
+    // Mevcut kayıtlara yeni eklenen gerçek fotoğraf URL'lerini otomatik aktar
+    (function syncDefaultImages() {
+      let changed = false;
+      DEFAULT_CITIES.forEach(defCity => {
+        const savedCity = appState.cities.find(c => c.id === defCity.id);
+        if (!savedCity) return;
+        ["places", "restaurants"].forEach(sec => {
+          (defCity[sec] || []).forEach(defItem => {
+            const savedItem = (savedCity[sec] || []).find(i => i.id === defItem.id);
+            if (savedItem && defItem.image && !savedItem.image) {
+              savedItem.image = defItem.image;
+              changed = true;
+            }
+          });
+        });
+      });
+      if (changed) persistAppState();
+    })();
+
     renderAll();
+
+    // Açılış animasyonunu yumuşakça kapat
+    setTimeout(() => {
+      const sp = document.getElementById("splashOverlay");
+      if (sp) sp.classList.add("fade-out");
+    }, 1150);
   </script>
 </body>
 </html>

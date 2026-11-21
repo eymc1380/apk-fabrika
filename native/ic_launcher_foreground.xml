@@ -3,10 +3,16 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Dış Altın Kehribar Konum İğnesi -->
     <path
-        android:fillColor="#0284c7"
-        android:pathData="M54,18 L24,31.5 L24,58.5 C24,76.5 36.8,93.2 54,98 C71.2,93.2 84,76.5 84,58.5 L84,31.5 L54,18 Z"/>
+        android:fillColor="#d97706"
+        android:pathData="M54,18 C37.4,18 24,31.4 24,48 C24,69.5 54,92 54,92 C54,92 84,69.5 84,48 C84,31.4 70.6,18 54,18 Z"/>
+    <!-- İç Sıcak Taş Dairesi -->
     <path
-        android:fillColor="#ffffff"
-        android:pathData="M48,68 L36,56 L40.2,51.8 L48,59.6 L67.8,39.8 L72,44 L48,68 Z"/>
+        android:fillColor="#fef3c7"
+        android:pathData="M54,31 A16,16 0 1,0 54,63 A16,16 0 1,0 54,31 Z"/>
+    <!-- Mardin Taş Kemer / Kubbe Silueti -->
+    <path
+        android:fillColor="#78350f"
+        android:pathData="M43,56 L43,47 Q54,37 65,47 L65,56 L60,56 L60,49 Q54,43 48,49 L48,56 Z"/>
 </vector>
