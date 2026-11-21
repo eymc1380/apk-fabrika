@@ -1,1418 +1,1987 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SMS Mesajlar</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Şehir Gezi & Lezzet Rehberi</title>
   <style>
     :root {
-      --bg: #0b0f19;
-      --card-bg: #161e2e;
-      --border: #243046;
+      --bg: #0f1419;
+      --card: #18202a;
+      --card-alt: #1f2937;
+      --border: #2a3646;
       --text: #f3f4f6;
-      --text-muted: #9ca3af;
-      --primary: #0284c7;
-      --primary-hover: #0369a1;
-      --danger: #ef4444;
+      --muted: #9ca3af;
+      --primary: #d97706;
+      --primary-hover: #b45309;
+      --primary-text: #ffffff;
       --success: #10b981;
+      --info: #0284c7;
       --warning: #f59e0b;
-      --bubble-in: #1e293b;
-      --bubble-out: #0369a1;
-      --sim1: #3b82f6;
-      --sim2: #ec4899;
+      --danger: #ef4444;
+      --radius: 14px;
     }
+
+    body.light {
+      --bg: #f6f4ef;
+      --card: #ffffff;
+      --card-alt: #f3efe6;
+      --border: #e5dfd3;
+      --text: #1c1917;
+      --muted: #6b635b;
+      --primary: #b45309;
+      --primary-hover: #92400e;
+      --primary-text: #ffffff;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     body {
       margin: 0;
       padding: 0;
-      background-color: var(--bg);
+      background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      user-select: none;
-      -webkit-user-select: none;
+      font-size: 14px;
+      line-height: 1.5;
     }
 
+    /* Header */
     .header {
-      background-color: #0d1527;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: var(--card);
       border-bottom: 1px solid var(--border);
     }
 
-    .header-left {
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 14px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 0 8px 0;
+      flex-wrap: wrap;
+    }
+
+    .brand {
       display: flex;
       align-items: center;
       gap: 10px;
     }
 
-    .header h1 {
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background: var(--primary);
+      color: var(--primary-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .brand h1 {
       margin: 0;
-      font-size: 1.05rem;
-      font-weight: 600;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .brand p {
+      margin: 2px 0 0 0;
+      font-size: 12px;
+      color: var(--muted);
     }
 
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
-    .btn-sync {
-      background: #1e293b;
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      cursor: pointer;
-    }
-
-    .search-box-wrapper {
-      padding: 10px 14px 6px 14px;
-      background: #0d1527;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .search-box {
-      width: 100%;
-      background: #0b0f19;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 20px;
-      box-sizing: border-box;
-      outline: none;
-      font-size: 0.85rem;
-    }
-
-    .selection-toolbar {
-      display: none;
-      background: #1e293b;
-      padding: 10px 16px;
+    .btn {
+      display: inline-flex;
       align-items: center;
-      justify-content: space-between;
-      border-bottom: 2px solid var(--primary);
-    }
-
-    .selection-toolbar.active {
-      display: flex;
-    }
-
-    .selection-toolbar-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .btn-action {
-      background: #0f172a;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
       border: 1px solid var(--border);
-      color: #fff;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 0.75rem;
+      background: var(--card-alt);
+      color: var(--text);
       cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.15s, border-color 0.15s;
     }
 
-    .tabs-wrapper {
+    .btn:hover { opacity: 0.9; border-color: var(--primary); }
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-text);
+      border-color: var(--primary);
+    }
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+      border-color: var(--success);
+    }
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.14);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    /* City Tabs */
+    .tabs-row {
       display: flex;
-      background: #111827;
-      border-bottom: 1px solid var(--border);
+      align-items: center;
+      gap: 4px;
       overflow-x: auto;
       scrollbar-width: none;
+      padding-bottom: 0;
     }
+    .tabs-row::-webkit-scrollbar { display: none; }
 
-    .tab-btn {
-      padding: 12px 16px;
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 0.85rem;
+    .city-tab {
+      padding: 9px 14px;
+      font-size: 13px;
       font-weight: 600;
-      cursor: pointer;
+      color: var(--muted);
+      background: transparent;
+      border: none;
       border-bottom: 2px solid transparent;
+      cursor: pointer;
       white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .tab-btn.active {
+    .city-tab.active {
       color: var(--primary);
       border-bottom-color: var(--primary);
     }
 
-    .content {
-      padding: 14px;
-      padding-bottom: 80px;
-    }
-
-    .tab-pane {
-      display: none;
-    }
-
-    .tab-pane.active {
-      display: block;
-    }
-
-    .card {
-      background: var(--card-bg);
+    .badge-count {
+      font-size: 11px;
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px;
-      margin-bottom: 12px;
+      color: var(--muted);
     }
 
-    .filters-row {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .filter-group {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 2px;
-    }
-
-    .sub-tab-btn {
-      padding: 5px 12px;
-      border-radius: 16px;
-      background: #1e293b;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-size: 0.75rem;
+    .city-tab-add {
+      margin: 4px 0 4px 6px;
+      padding: 6px 11px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      background: transparent;
+      border: 1px dashed var(--border);
+      border-radius: 9px;
       cursor: pointer;
       white-space: nowrap;
     }
 
-    .sub-tab-btn.active {
+    /* Main Layout */
+    .main {
+      padding: 16px 0 60px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Hero */
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .hero-info { flex: 1 1 320px; }
+    .hero-tags { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+    .tag-plate {
+      background: var(--primary);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .tag-region { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .hero h2 { margin: 0 0 6px 0; font-size: 18px; font-weight: 700; }
+    .hero p { margin: 0; font-size: 13px; color: var(--muted); }
+
+    .hero-stats {
+      min-width: 220px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .progress-bar-bg {
+      height: 8px;
+      background: var(--card-alt);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 8px 0 6px 0;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary);
+      transition: width 0.3s ease;
+    }
+
+    /* Section Switcher (Gezilecek Yerler vs Restoranlar) */
+    .section-switcher {
+      display: flex;
+      gap: 8px;
+      background: var(--card);
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+
+    .sec-btn {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .sec-btn.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* Search & Filter Bar */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .search-wrap {
+      position: relative;
+      flex: 1 1 260px;
+      max-width: 440px;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      padding: 9px 12px 9px 34px;
+      border-radius: 11px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+    }
+    .search-wrap input:focus { border-color: var(--primary); }
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .pills {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+    .pills::-webkit-scrollbar { display: none; }
+
+    .pill {
+      padding: 7px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .pill.active {
       background: var(--primary);
       color: #fff;
       border-color: var(--primary);
     }
 
-    .sub-tab-btn.sim1.active {
-      background: var(--sim1);
-      border-color: var(--sim1);
+    /* Grid & Cards */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 14px;
     }
 
-    .sub-tab-btn.sim2.active {
-      background: var(--sim2);
-      border-color: var(--sim2);
-    }
-
-    .sms-item {
-      background: var(--card-bg);
+    .card {
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 14px;
-      margin-bottom: 10px;
-      cursor: pointer;
+      border-radius: 16px;
+      overflow: hidden;
       display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .sms-item.inbox {
-      border-left: 4px solid var(--success);
-    }
-
-    .sms-item.sent {
-      border-left: 4px solid var(--primary);
-    }
-
-    .sms-item.spam {
-      border-left: 4px solid var(--danger);
-    }
-
-    .sms-checkbox {
-      margin-top: 4px;
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      accent-color: var(--primary);
-    }
-
-    .sms-content-wrap {
-      flex: 1;
-    }
-
-    .sms-header {
-      display: flex;
+      flex-direction: column;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
+      transition: border-color 0.15s;
+    }
+    .card:hover { border-color: var(--primary); }
+
+    .card-art {
+      position: relative;
+      height: 156px;
+      width: 100%;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      overflow: hidden;
     }
 
-    .sms-sender {
-      font-weight: bold;
-      font-size: 0.95rem;
-      color: #fff;
+    .card-badges-left {
+      position: absolute;
+      top: 10px;
+      left: 10px;
       display: flex;
-      align-items: center;
       gap: 6px;
       flex-wrap: wrap;
     }
 
-    .sms-sender .sender-sub {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      font-weight: normal;
+    .glass-badge {
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 7px;
+      backdrop-filter: blur(4px);
     }
 
-    .category-badge {
-      font-size: 0.65rem;
-      background: rgba(245, 158, 11, 0.2);
-      color: var(--warning);
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: bold;
+    .rating-badge {
+      background: #f59e0b;
+      color: #1c1917;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 7px;
     }
 
-    .sim-badge {
-      font-size: 0.65rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: bold;
-      text-transform: uppercase;
+    .visited-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 4px 9px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+    }
+    .visited-btn.done { background: var(--success); }
+
+    .card-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
 
-    .sim-badge.sim-1 {
-      background: rgba(59, 130, 246, 0.2);
-      color: #60a5fa;
-      border: 1px solid rgba(59, 130, 246, 0.4);
+    .card-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .card-title:hover { color: var(--primary); }
+
+    .card-loc {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
-    .sim-badge.sim-2 {
-      background: rgba(236, 72, 153, 0.2);
-      color: #f472b6;
-      border: 1px solid rgba(236, 72, 153, 0.4);
+    .card-desc {
+      margin: 2px 0 0 0;
+      font-size: 12.5px;
+      color: var(--muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
-    .sms-date {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .sms-body {
-      font-size: 0.88rem;
-      color: #d1d5db;
-      line-height: 1.4;
-      word-break: break-word;
-    }
-
-    .sms-reason {
-      margin-top: 8px;
-      font-size: 0.75rem;
-      color: var(--danger);
-      background: rgba(239, 68, 68, 0.1);
-      padding: 4px 8px;
-      border-radius: 4px;
-      display: inline-block;
-    }
-
-    .empty-state {
-      text-align: center;
-      color: var(--text-muted);
-      padding: 40px 10px;
-      font-size: 0.9rem;
-    }
-
-    .input-group {
+    .card-footer {
+      padding: 0 14px 14px 14px;
       display: flex;
       gap: 8px;
-      margin-bottom: 14px;
     }
+    .card-footer .btn { flex: 1; padding: 9px 10px; }
 
-    input[type="text"], input[type="tel"], textarea, select {
-      flex: 1;
-      background: #0f172a;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 10px;
-      border-radius: 6px;
-      outline: none;
-      font-size: 0.9rem;
-      box-sizing: border-box;
-      font-family: inherit;
-    }
-
-    button.btn-primary {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    button.btn-danger {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--danger);
-      border: 1px solid var(--danger);
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .tag-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 16px;
-    }
-
-    .tag {
-      background: #1e293b;
-      border: 1px solid var(--border);
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .tag .remove-btn {
-      color: var(--danger);
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .fab-btn {
+    /* Modals */
+    .modal-backdrop {
       position: fixed;
-      right: 20px;
-      bottom: 24px;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background-color: var(--primary);
-      color: #ffffff;
-      border: none;
-      font-size: 26px;
+      inset: 0;
+      z-index: 50;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(3px);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-      cursor: pointer;
-      z-index: 100;
+      padding: 12px;
     }
+    .modal-backdrop.hidden { display: none; }
 
-    .chat-view {
-      position: fixed;
-      top: 0;
-      left: 0;
+    .modal-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
       width: 100%;
-      height: 100%;
-      background: var(--bg);
-      z-index: 300;
-      display: none;
+      max-width: 680px;
+      max-height: 90vh;
+      display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
-    .chat-view.open {
-      display: flex;
-    }
-
-    .chat-header {
-      background: #0d1527;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .modal-art {
+      position: relative;
+      height: 190px;
+      flex-shrink: 0;
       border-bottom: 1px solid var(--border);
     }
 
-    .chat-back-btn {
-      background: none;
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
       border: none;
-      color: var(--text);
-      font-size: 1.4rem;
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      font-size: 20px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .chat-body {
-      flex: 1;
-      padding: 16px;
+    .modal-body {
+      padding: 18px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
+      gap: 14px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 10px;
     }
 
-    .chat-bubble {
-      max-width: 80%;
-      padding: 10px 14px;
+    .info-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
       border-radius: 12px;
-      font-size: 0.9rem;
-      line-height: 1.4;
-      word-break: break-word;
-    }
-
-    .chat-bubble.in {
-      align-self: flex-start;
-      background: var(--bubble-in);
-      border-bottom-left-radius: 2px;
-    }
-
-    .chat-bubble.out {
-      align-self: flex-end;
-      background: var(--bubble-out);
-      color: #fff;
-      border-bottom-right-radius: 2px;
-    }
-
-    .bubble-time {
-      font-size: 0.68rem;
-      color: rgba(255, 255, 255, 0.6);
-      margin-top: 4px;
-      text-align: right;
-    }
-
-    .chat-footer {
-      background: #0d1527;
       padding: 10px 12px;
-      display: flex;
-      gap: 8px;
-      border-top: 1px solid var(--border);
+    }
+    .info-label { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+    .info-val { font-size: 12.5px; font-weight: 600; margin-top: 3px; }
+
+    .tip-box {
+      background: var(--bg);
+      border-left: 4px solid var(--primary);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 12.5px;
     }
 
-    .chat-footer input {
-      flex: 1;
-      background: #161e2e;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 10px 14px;
-      border-radius: 20px;
-      outline: none;
-    }
-
-    .chat-footer button {
-      background: var(--primary);
-      border: none;
-      color: #fff;
-      padding: 0 16px;
-      border-radius: 20px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(3px);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      box-sizing: border-box;
-    }
-
-    .modal-overlay.open {
-      display: flex;
-    }
-
-    .modal-card {
-      background-color: var(--card-bg);
+    .maps-box {
+      background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 12px;
-      width: 100%;
-      max-width: 420px;
-      max-height: 85vh;
+      padding: 12px;
       display: flex;
-      flex-direction: column;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    .modal-card h2 {
-      margin: 0 0 14px 0;
-      font-size: 1.1rem;
-      display: flex;
-      justify-content: space-between;
+      flex-wrap: wrap;
       align-items: center;
-    }
-
-    .modal-card .close-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 1.4rem;
-      cursor: pointer;
-    }
-
-    .contact-item {
-      padding: 10px;
-      border-bottom: 1px solid var(--border);
-      cursor: pointer;
-      display: flex;
       justify-content: space-between;
+      gap: 10px;
     }
 
-    .contact-item:hover {
-      background: #1e293b;
+    /* Forms */
+    .form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+    .form-group label { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
     }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 520px) { .form-row { grid-template-columns: 1fr; } }
+
+    .backup-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 90;
+      background: var(--card);
+      border: 1px solid var(--primary);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+    .toast.hidden { display: none; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <div class="header-left">
-      <h1>💬 Mesajlar</h1>
-    </div>
-    <div class="header-actions">
-      <button class="btn-sync" onclick="handleSyncDeviceSms()" title="Telefon hafızasındaki yeni SMS'leri senkronize et">🔄 Senkronize</button>
-    </div>
-  </div>
-
-  <!-- ARAMA BARI VE ATANMAMIŞLAR KUTUSU -->
-  <div class="search-box-wrapper">
-    <input type="text" id="sms-search" class="search-box" placeholder="🔍 Mesajlarda, numaralarda veya kişilerde ara..." oninput="handleSearch(this.value)">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding: 0 4px;">
-      <label style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: pointer;">
-        <input type="checkbox" id="chk-unassigned-only" onchange="toggleUnassignedFilter(this.checked)" style="width: 14px; height: 14px; accent-color: var(--warning);">
-        <span>Yalnızca sekmeye atanmamış SMS'leri göster</span>
-      </label>
-      <span id="unassigned-badge-count" style="font-size: 0.7rem; color: var(--warning); font-weight: bold;"></span>
-    </div>
-  </div>
-
-  <!-- ÇOKLU SEÇİM EYLEM BARI -->
-  <div id="selection-bar" class="selection-toolbar">
-    <span id="selected-count" style="font-size: 0.85rem; font-weight: bold;">0 seçildi</span>
-    <div class="selection-toolbar-actions">
-      <button class="btn-action" onclick="openAssignCategoryModal()" title="Kategoriye Ata">📁 Sekmeye Ata</button>
-      <button class="btn-action" onclick="copySelectedBodies()" title="Metinleri Kopyala">📋 Kopyala</button>
-      <button class="btn-action" onclick="toggleMoveSelected()" title="Karantinaya Taşı / Güvene Al">⇄ Taşı</button>
-      <button class="btn-action" style="color:var(--danger);" onclick="deleteSelectedMessages()" title="Seçilenleri Sil">🗑️ Sil</button>
-      <button class="btn-action" onclick="clearSelection()">İptal</button>
-    </div>
-  </div>
-
-  <!-- DİNAMİK ÜST SEKMELER -->
-  <div class="tabs-wrapper" id="main-tabs-bar"></div>
-
-  <div class="content">
-    <div id="tab-messages" class="tab-pane active">
-      <div class="filters-row">
-        <div class="filter-group">
-          <button class="sub-tab-btn active" onclick="switchSubTab('all')">Tüm Akış</button>
-          <button class="sub-tab-btn" onclick="switchSubTab('inbox')">Gelenler</button>
-          <button class="sub-tab-btn" onclick="switchSubTab('sent')">Gidenler</button>
-          <button class="sub-tab-btn" id="btn-sub-unassigned" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.4);" onclick="switchSubTab('unassigned')">📂 Atanmamışlar</button>
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="header-top">
+        <div class="brand">
+          <div class="brand-icon">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <div>
+            <h1>Şehir Gezi & Lezzet Rehberi</h1>
+            <p id="storageStatusText">Telefona otomatik yedekleniyor</p>
+          </div>
         </div>
-        <div class="filter-group" id="sim-filter-group">
-          <button class="sub-tab-btn active" onclick="switchSimFilter('all')">Tüm Hatlar</button>
-          <button class="sub-tab-btn sim1" onclick="switchSimFilter('SIM 1')">SIM 1</button>
-          <button class="sub-tab-btn sim2" onclick="switchSimFilter('SIM 2')">SIM 2</button>
+
+        <div class="header-actions">
+          <button class="btn" onclick="openAddEntryModal()">+ Yer / Restoran Ekle</button>
+          <button class="btn" onclick="openBackupModal()">💾 Yedek & Dosya</button>
+          <button class="btn" onclick="toggleTheme()" id="themeBtn" title="Tema Değiştir">☀️</button>
         </div>
       </div>
-      <div id="messages-list"></div>
+
+      <div class="tabs-row" id="cityTabs"></div>
     </div>
+  </header>
 
-    <!-- KURALLAR SEKMESİ -->
-    <div id="tab-rules" class="tab-pane">
-      <div class="card">
-        <h3>Özel Sekmeler (Kategoriler)</h3>
-        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Örn: BANKA, AİLE, İŞ. Sekmeyi açıp gelen mesajları bu sekmeye bağlayabilirsiniz.</p>
-        <div class="input-group">
-          <input type="text" id="input-new-category" placeholder="Yeni Sekme Adı (Örn: BANKA)">
-          <button class="btn-primary" onclick="createCategory()">Sekme Oluştur</button>
-        </div>
-        <div id="tags-categories" class="tag-container"></div>
+  <!-- Main -->
+  <main class="container main">
+    <section class="hero" id="cityHero"></section>
+
+    <!-- Gezilecek Yerler / Restoranlar Switcher -->
+    <section class="section-switcher">
+      <button class="sec-btn active" id="tabPlacesBtn" onclick="switchSection('places')">
+        🏛️ Gezilecek Yerler (<span id="countPlaces">0</span>)
+      </button>
+      <button class="sec-btn" id="tabRestaurantsBtn" onclick="switchSection('restaurants')">
+        🍽️ Yüksek Puanlı Restoranlar (<span id="countRestaurants">0</span>)
+      </button>
+    </section>
+
+    <!-- Search & Category Pills -->
+    <section class="controls">
+      <div class="search-wrap">
+        <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input id="searchInput" type="text" placeholder="Yer, restoran, ilçe veya yemek ara..." oninput="renderGrid()" />
       </div>
+      <div class="pills" id="categoryPills"></div>
+    </section>
 
-      <div class="card">
-        <h3>Başlık Engelleme (Karantina)</h3>
-        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Gönderici adı bu kelimelerden biriyle eşleşirse karantinaya alınır.</p>
-        <div class="input-group">
-          <input type="text" id="input-title" placeholder="Örn: BAHIS, KUMAR">
-          <button class="btn-primary" onclick="addRule('titles')">Ekle</button>
-        </div>
-        <div id="tags-titles" class="tag-container"></div>
-      </div>
+    <!-- Grid -->
+    <section class="grid" id="itemsGrid"></section>
 
-      <div class="card">
-        <h3>B-Kodu Engelleme (BTK)</h3>
-        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Mesaj sonundaki yetkili operatör kodu eşleşirse engellenir.</p>
-        <div class="input-group">
-          <input type="text" id="input-bcode" placeholder="Örn: B214, B002">
-          <button class="btn-primary" onclick="addRule('bcodes')">Ekle</button>
-        </div>
-        <div id="tags-bcodes" class="tag-container"></div>
-      </div>
-    </div>
-
-    <!-- SPAM / KARANTİNA SEKMESİ -->
-    <div id="tab-spam" class="tab-pane">
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-        <button class="btn-danger" onclick="clearSpam()">Tüm Karantinayı Temizle</button>
-      </div>
-      <div id="spam-list"></div>
-    </div>
-  </div>
-
-  <button class="fab-btn" onclick="openComposeModal()" title="Yeni Mesaj">✏️</button>
-
-  <!-- YENİ MESAJ MODALI -->
-  <div id="compose-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h2>
-        <span>Yeni SMS Gönder</span>
-        <button class="close-btn" onclick="closeComposeModal()">&times;</button>
-      </h2>
-      <div style="margin-bottom: 12px;">
-        <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">Gönderilecek SIM Kart</label>
-        <select id="compose-sim-select"></select>
-      </div>
-      <div style="margin-bottom: 12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-          <label style="font-size:0.8rem; color:var(--text-muted);">Alıcı Numara</label>
-          <button style="background:none; border:none; color:var(--primary); font-size:0.8rem; cursor:pointer; font-weight:bold;" onclick="openContactPicker()">👥 Rehberden Seç</button>
-        </div>
-        <input type="tel" id="compose-phone" placeholder="Örn: 05551234567" style="width:100%;">
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">Mesaj Metni</label>
-        <textarea id="compose-message" rows="4" placeholder="Mesajınızı yazın..." style="width:100%;"></textarea>
-      </div>
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button class="btn-primary" style="background:transparent; border:1px solid var(--border);" onclick="closeComposeModal()">İptal</button>
-        <button class="btn-primary" onclick="handleSendSms()">Gönder 🚀</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- REHBER MODALI -->
-  <div id="contact-picker-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h2>
-        <span>Rehberden Kişi Seç</span>
-        <button class="close-btn" onclick="closeContactPicker()">&times;</button>
-      </h2>
-      <input type="text" id="contact-search" placeholder="Kişilerde ara..." style="margin-bottom:12px; width:100%;" oninput="filterContacts(this.value)">
-      <div id="contact-list" style="overflow-y:auto; flex:1;"></div>
-    </div>
-  </div>
-
-  <!-- KATEGORİYE ATA MODALI -->
-  <div id="assign-category-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h2>
-        <span>Sekmeye Sabitle</span>
-        <button class="close-btn" onclick="closeAssignCategoryModal()">&times;</button>
-      </h2>
-      <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Seçilen göndericiler bu sekmeye bağlanacak ve sonraki tüm mesajları doğrudan bu sekmede listelenecektir.</p>
-      <div id="assign-category-list" style="display:flex; flex-direction:column; gap:8px;"></div>
-    </div>
-  </div>
-
-  <!-- SOHBET PENCERESİ -->
-  <div id="chat-view" class="chat-view">
-    <div class="chat-header">
-      <button class="chat-back-btn" onclick="closeChatView()">&larr;</button>
+    <section id="emptyState" class="hero hidden" style="justify-content: center; text-align: center; padding: 36px;">
       <div>
-        <div id="chat-title" style="font-weight:bold; font-size:0.95rem;">-</div>
-        <div id="chat-sub" style="font-size:0.75rem; color:var(--text-muted);">-</div>
+        <h3 style="margin:0 0 6px 0;">Sonuç bulunamadı</h3>
+        <p style="margin:0 0 12px 0; color:var(--muted); font-size:13px;">Arama filtresini değiştirebilir veya bu şehre yeni kayıt ekleyebilirsiniz.</p>
+        <button class="btn btn-primary" onclick="openAddEntryModal()">+ Yeni Kayıt Ekle</button>
       </div>
-    </div>
-    <div id="chat-body" class="chat-body"></div>
-    <div class="chat-footer">
-      <input type="text" id="chat-input" placeholder="Mesaj yaz..." onkeypress="if(event.key === 'Enter') sendReplySms()">
-      <button onclick="sendReplySms()">Gönder</button>
+    </section>
+  </main>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="modal-backdrop hidden" onclick="if(event.target===this) closeDetailModal()">
+    <div class="modal-box">
+      <div class="modal-art" id="detailArt"></div>
+      <div class="modal-body" id="detailBody"></div>
     </div>
   </div>
+
+  <!-- Add City Modal -->
+  <div id="addCityModal" class="modal-backdrop hidden" onclick="if(event.target===this) closeAddCityModal()">
+    <div class="modal-box" style="max-width: 440px;">
+      <div class="modal-body">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h2 style="margin:0; font-size:16px;">Yeni İl Sekmesi Ekle</h2>
+          <button class="btn" onclick="closeAddCityModal()">✕</button>
+        </div>
+        <form onsubmit="submitNewCity(event)">
+          <div class="form-group">
+            <label>İl Adı *</label>
+            <input id="newCityName" required placeholder="Örn: Şanlıurfa" />
+          </div>
+          <div class="form-group">
+            <label>Plaka Kodu</label>
+            <input id="newCityPlate" placeholder="Örn: 63" />
+          </div>
+          <div class="form-group">
+            <label>Slogan / Alt Başlık</label>
+            <input id="newCitySubtitle" placeholder="Örn: Peygamberler Şehri & Göbeklitepe" />
+          </div>
+          <div class="form-group">
+            <label>Şehir Özeti</label>
+            <textarea id="newCityDesc" rows="2" placeholder="Şehir hakkında kısa bilgi..."></textarea>
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+            <button type="button" class="btn" onclick="closeAddCityModal()">İptal</button>
+            <button type="submit" class="btn btn-primary">Sekme Oluştur</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Place or Restaurant Modal -->
+  <div id="addEntryModal" class="modal-backdrop hidden" onclick="if(event.target===this) closeAddEntryModal()">
+    <div class="modal-box" style="max-width: 540px;">
+      <div class="modal-body">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h2 style="margin:0; font-size:16px;">Yeni Gezi Noktası veya Restoran Ekle</h2>
+          <button class="btn" onclick="closeAddEntryModal()">✕</button>
+        </div>
+        <form onsubmit="submitNewEntry(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Kayıt Türü *</label>
+              <select id="eType" onchange="toggleEntryFields()">
+                <option value="place">Gezilecek Yer</option>
+                <option value="restaurant">Restoran / Kafe</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>İlçe / Bölge *</label>
+              <input id="eDistrict" required placeholder="Örn: Artuklu" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Mekan Adı *</label>
+              <input id="eName" required placeholder="Örn: Kasımiye Medresesi" />
+            </div>
+            <div class="form-group">
+              <label>Kategori</label>
+              <select id="eCategory">
+                <option value="Tarihi Yapı">Tarihi Yapı</option>
+                <option value="İnanç Merkezi">İnanç Merkezi</option>
+                <option value="Antik Kent">Antik Kent</option>
+                <option value="Doğa & Kültür">Doğa & Kültür</option>
+                <option value="Seyir & Çarşı">Seyir & Çarşı</option>
+                <option value="Tarihi Yer İçi">Tarihi Yer İçi (Restoran/Kafe)</option>
+                <option value="Yöresel Mutfak">Yöresel Mutfak</option>
+                <option value="Kahve & Tatlı">Kahve & Tatlı</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="restExtraFields" class="form-row hidden">
+            <div class="form-group">
+              <label>Puan (1.0 - 5.0)</label>
+              <input id="eRating" type="number" step="0.1" min="1" max="5" value="4.7" />
+            </div>
+            <div class="form-group">
+              <label>Öne Çıkan Lezzetler</label>
+              <input id="eSignature" placeholder="Örn: Kaburga dolması, mırra" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Enlem, Boylam (Koordinat)</label>
+              <input id="eCoords" placeholder="Örn: 37.3127, 40.7351" />
+            </div>
+            <div class="form-group">
+              <label>Açık Adres Tarifi</label>
+              <input id="eAddress" placeholder="Örn: 1. Cadde, Ulucami Mah." />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Resim URL (Opsiyonel - Boş bırakılırsa otomatik çizim kullanılır)</label>
+            <input id="eImage" type="url" placeholder="https://..." />
+          </div>
+
+          <div class="form-group">
+            <label>Kısa Özet *</label>
+            <input id="eSummary" required placeholder="Kart üzerinde görünecek özet..." />
+          </div>
+
+          <div class="form-group">
+            <label>Detaylı Döküman / Notlar *</label>
+            <textarea id="eHistory" required rows="3" placeholder="Tarihçe, mimari veya mekan hakkında detaylı bilgi..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Ziyaret / Çalışma Saatleri</label>
+              <input id="eHours" placeholder="Örn: 08:30 - 22:00" />
+            </div>
+            <div class="form-group">
+              <label>Gezi İpucu / Fiyat</label>
+              <input id="eTip" placeholder="Örn: Gün batımında gidin" />
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+            <button type="button" class="btn" onclick="closeAddEntryModal()">İptal</button>
+            <button type="submit" class="btn btn-primary">Kaydet ve Telefona Yedekle</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Backup & Phone File Storage Modal -->
+  <div id="backupModal" class="modal-backdrop hidden" onclick="if(event.target===this) closeBackupModal()">
+    <div class="modal-box" style="max-width: 580px;">
+      <div class="modal-body">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h2 style="margin:0; font-size:16px;">💾 Telefon Dosya Yolu & Yedekleme Merkezi</h2>
+          <button class="btn" onclick="closeBackupModal()">✕</button>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">Telefondaki Kalıcı Dosya Yolu</div>
+          <div class="info-val" id="backupPathDisplay" style="font-family:monospace; word-break:break-all; color:var(--primary);">
+            /storage/emulated/0/Documents/SehirRehberiBackup/rehber_yedek.json
+          </div>
+          <p style="margin:6px 0 0 0; font-size:11.5px; color:var(--muted);">
+            Tüm şehirler, mekanlar, restoranlar, gezildi işaretleri ve kişisel notlarınız yerel depolama yerine doğrudan telefonunuzdaki bu dosya yoluna kaydedilir. Uygulama silinse bile verileriniz bu klasörde korunur.
+          </p>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <button class="btn btn-primary" onclick="createManualPhoneBackup()">📸 Anlık Yedek Oluştur</button>
+          <button class="btn" onclick="exportJsonDownload()">⬇️ JSON İndir (Paylaş)</button>
+          <label class="btn" style="cursor:pointer;">
+            ⬆️ Dosyadan Geri Yükle (.json)
+            <input type="file" accept=".json,application/json" style="display:none;" onchange="importJsonFile(event)" />
+          </label>
+        </div>
+
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span class="info-label">Telefondaki Yedek Dosyaları</span>
+            <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="refreshBackupList()">🔄 Yenile</button>
+          </div>
+          <div id="backupListContainer" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto;"></div>
+        </div>
+
+        <div style="border-top:1px solid var(--border); padding-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <span style="font-size:11.5px; color:var(--muted);">Yanlışlıkla silme durumunda yukarıdaki listeden tek tıkla geri yükleyebilirsiniz.</span>
+          <button class="btn btn-danger" onclick="safeResetDefaults()">Varsayılana Dön (Önce Yedek Alır)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
 
   <script>
-    const STORAGE_KEY = "SMS_FILTER_RULES";
-    const contactCache = {};
-    let allContactsList = [];
-    let currentFilter = 'all'; // all, inbox, sent, unassigned
-    let currentSimFilter = 'all';
-    let currentMainTab = 'all';
-    let activeChatTarget = null;
-    let searchQuery = '';
-    const selectedMessages = new Set();
-    let detectedSims = [];
-    let onlyUnassigned = false;
-
-    let categories = [];
-
-    function getBridge() {
-      return window.AndroidBridge || null;
-    }
-
-    function initCategories() {
-      const bridge = getBridge();
-      if (bridge && bridge.getMessages) {
-        try {
-          const raw = bridge.getMessages("categories");
-          categories = JSON.parse(raw || "[]");
-        } catch(e) {
-          categories = [];
-        }
-      } else {
-        categories = JSON.parse(localStorage.getItem("CATEGORIES") || "[]");
-      }
-      renderTabsBar();
-      renderCategoryTags();
-    }
-
-    function saveCategories() {
-      const json = JSON.stringify(categories);
-      localStorage.setItem("CATEGORIES", json);
-      const bridge = getBridge();
-      if (bridge && bridge.saveStoreData) {
-        bridge.saveStoreData("categories", json);
-      }
-      renderTabsBar();
-      renderCategoryTags();
-    }
-
-    function createCategory() {
-      const input = document.getElementById('input-new-category');
-      const name = input.value.trim().toUpperCase();
-      if (!name) return;
-
-      if (!categories.find(c => c.name === name)) {
-        categories.push({ name: name, senders: [] });
-        saveCategories();
-      }
-      input.value = "";
-    }
-
-    function deleteCategory(name) {
-      if (!confirm(`'${name}' sekmesi kaldırılsın mı?`)) return;
-      categories = categories.filter(c => c.name !== name);
-      saveCategories();
-      if (currentMainTab === name) currentMainTab = 'all';
-      renderTabsBar();
-      loadAllMessages();
-    }
-
-    function renderCategoryTags() {
-      const container = document.getElementById('tags-categories');
-      container.innerHTML = categories.map(c => `
-        <div class="tag">
-          <span>📁 ${c.name} (${c.senders.length} gönderici)</span>
-          <span class="remove-btn" onclick="deleteCategory('${c.name}')">&times;</span>
-        </div>
-      `).join('');
-    }
-
-    function renderTabsBar() {
-      const bar = document.getElementById('main-tabs-bar');
-      let html = `
-        <button class="tab-btn ${currentMainTab === 'all' ? 'active' : ''}" onclick="switchCategoryTab('all')">Mesajlar</button>
-      `;
-
-      categories.forEach(c => {
-        html += `<button class="tab-btn ${currentMainTab === c.name ? 'active' : ''}" onclick="switchCategoryTab('${c.name}')">📁 ${c.name}</button>`;
-      });
-
-      html += `
-        <button class="tab-btn ${currentMainTab === 'rules' ? 'active' : ''}" onclick="switchCategoryTab('rules')">Kurallar</button>
-        <button class="tab-btn ${currentMainTab === 'spam' ? 'active' : ''}" onclick="switchCategoryTab('spam')">Spam / Karantina</button>
-      `;
-      bar.innerHTML = html;
-    }
-
-    function switchCategoryTab(tabName) {
-      currentMainTab = tabName;
-      renderTabsBar();
-      clearSelection();
-
-      document.querySelectorAll('.content .tab-pane').forEach(p => p.classList.remove('active'));
-
-      if (tabName === 'rules') {
-        document.getElementById('tab-rules').classList.add('active');
-      } else if (tabName === 'spam') {
-        document.getElementById('tab-spam').classList.add('active');
-        loadSpamMessages();
-      } else {
-        document.getElementById('tab-messages').classList.add('active');
-        loadAllMessages();
-      }
-    }
-
-    function getSenderCategory(sender) {
-      if (!sender) return null;
-      const upper = sender.toUpperCase();
-      for (let c of categories) {
-        if (c.senders.some(s => s.toUpperCase() === upper)) {
-          return c.name;
-        }
-      }
-      return null;
-    }
-
-    function toggleUnassignedFilter(checked) {
-      onlyUnassigned = checked;
-      loadAllMessages();
-    }
-
-    function openAssignCategoryModal() {
-      if (selectedMessages.size === 0) return;
-      if (categories.length === 0) {
-        alert("Önce Kurallar sekmesinden en az bir sekme (kategori) oluşturmalısınız.");
-        return;
-      }
-      const listDiv = document.getElementById('assign-category-list');
-      listDiv.innerHTML = categories.map(c => `
-        <button class="btn-primary" style="text-align:left; padding:12px; background:#1e293b;" onclick="assignSelectedToCategory('${c.name}')">
-          📁 ${c.name}
-        </button>
-      `).join('');
-      document.getElementById('assign-category-modal').classList.add('open');
-    }
-
-    function closeAssignCategoryModal() {
-      document.getElementById('assign-category-modal').classList.remove('open');
-    }
-
-    function assignSelectedToCategory(catName) {
-      const bridge = getBridge();
-      let allMsg = [];
-      if (bridge && bridge.getMessages) {
-        try {
-          const inb = JSON.parse(bridge.getMessages("inbox_messages") || "[]");
-          const snt = JSON.parse(bridge.getMessages("sent_messages") || "[]");
-          allMsg = [...inb, ...snt];
-        } catch(e) {}
-      }
-
-      const targetCategory = categories.find(c => c.name === catName);
-      if (!targetCategory) return;
-
-      selectedMessages.forEach(id => {
-        const found = allMsg.find(m => m.id === id);
-        if (found) {
-          const who = (found.sender || found.recipient || "").toUpperCase();
-          if (who && !targetCategory.senders.includes(who)) {
-            targetCategory.senders.push(who);
+    // =========================================================================
+    // KAPSAMLI MARDİN VERİ SETİ (Gezilecek Yerler + Yüksek Puanlı Restoranlar)
+    // =========================================================================
+    const DEFAULT_CITIES = [
+      {
+        id: "mardin",
+        name: "Mardin",
+        plate: "47",
+        subtitle: "Taşın, İnancın ve Güneşin Masal Şehri",
+        region: "Güneydoğu Anadolu",
+        description: "Sarı kalker taşından teras evleri, Artuklu medreseleri, binlerce yıllık Süryani manastırları, Mezopotamya Ovası manzarası ve köklü mutfak kültürüyle açık hava müzesi.",
+        places: [
+          {
+            id: "mardin-ulu-cami",
+            name: "Mardin Ulu Camii",
+            district: "Artuklu",
+            category: "İnanç Merkezi",
+            coords: "37.3127, 40.7351",
+            address: "Ulucami Mah., 1. Cadde, Artuklu / Mardin",
+            artwork: "mosque",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mardin%20Ulu%20Cami%20DSCF0534.jpg?width=800",
+            summary: "12. yüzyıl Artuklu dönemine ait, dilimli kubbesi ve zarif minaresiyle Mardin siluetinin en tanınan simgesi.",
+            history: "Artuklu Hükümdarı Kutbeddin İlgazi döneminde (1176 civarı) inşa edilen Mardin Ulu Camii, kesme sarı taş işçiliğinin en seçkin örneklerinden biridir. Başlangıçta iki minareli olarak planlandığı bilinir; günümüze ulaşan tek minaresi 19. yüzyılda kare kaide üzerine silindirik gövdeli ve taş işlemeli olarak yenilenmiştir. Avlusundaki şadırvan ve eyvan düzeni, Güneydoğu Anadolu cami mimarisinin karakteristik çizgilerini taşır.",
+            hours: "05:00 - 22:00 (İbadet saatleri dışında ziyarete açık)",
+            fee: "Ücretsiz",
+            duration: "30 - 45 dk",
+            tip: "Caminin hemen altındaki tarihi Bakırcılar Çarşısı ve abbara (taş alt geçit) sokaklarını yürüyerek keşfedin."
+          },
+          {
+            id: "kasimiye-medresesi",
+            name: "Kasımiye Medresesi",
+            district: "Artuklu",
+            category: "Tarihi Yapı",
+            coords: "37.3094, 40.7225",
+            address: "Cumhuriyet Mah., Kasımiye Cad., Artuklu / Mardin",
+            artwork: "medrese",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mardin%20Kas%C4%B1miye%20Medresesi-%C3%96mer%20Gemici.jpg?width=800",
+            summary: "Mezopotamya Ovası'na hakim konumu ve yaşam döngüsünü simgeleyen havuzuyla 15. yüzyıl başyapıtı.",
+            history: "Yapımına Artuklular döneminde başlanan ancak Timur istilası nedeniyle yarım kalan medrese, Akkoyunlu Sultanı Kasım bin Cihangir tarafından 15. yüzyılın sonlarında (1487-1502) tamamlanmıştır. İki katlı, açık avlulu yapı taş oymacılığı ve astronomi-din ilimlerinin okutulduğu odalarıyla ünlüdür. Avludaki çeşmeden akan su, ince bir kanaldan geçerek ortadaki havuza dökülür; bu akış doğumdan ölüme uzanan insan ömrünü simgeler.",
+            hours: "08:30 - 19:00",
+            fee: "Ücretsiz",
+            duration: "1 - 1.5 saat",
+            tip: "Gün batımında üst terastan Mezopotamya Ovası'nı izleyin. Çıkışta hemen yakındaki seyir terasında dibek kahvesi içebilirsiniz."
+          },
+          {
+            id: "zinciriye-medresesi",
+            name: "Zinciriye (Sultan İsa) Medresesi",
+            district: "Artuklu",
+            category: "Tarihi Yapı",
+            coords: "37.3144, 40.7347",
+            address: "Medrese Mah., Mardin Kalesi Altı, Artuklu / Mardin",
+            artwork: "dome",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Mardin%20P1030364%2020080423110050.JPG?width=800",
+            summary: "1385 yılında inşa edilen, dilimli taş kubbeleri ve Mardin'i kuşbakışı gören terasıyla ünlü Artuklu medresesi.",
+            history: "Son Artuklu Sultanı Melik Necmeddin İsa tarafından 1385 yılında yaptırılmıştır. Mardin Kalesi'nin hemen eteklerinde yükselen yapı, iki dilimli kubbesi ve yüksek giriş kapısıyla dikkat çeker. Geçmişte rasathane (gözlemevi) ve eğitim kurumu olarak da hizmet vermiştir.",
+            hours: "08:30 - 18:30",
+            fee: "Ücretsiz",
+            duration: "45 - 60 dk",
+            tip: "Medresenin damına çıkarak Ulu Camii minaresi ile Mezopotamya Ovası'nı aynı kadrajda fotoğraflayın."
+          },
+          {
+            id: "deyrulzafaran-manastiri",
+            name: "Deyrulzafaran Manastırı",
+            district: "Artuklu",
+            category: "İnanç Merkezi",
+            coords: "37.3042, 40.7931",
+            address: "Eskikale Köyü Yolu, Merkeze 4 km, Artuklu / Mardin",
+            artwork: "monastery",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Deyrul-zafran.jpg?width=800",
+            summary: "5. yüzyıldan kalma, Güneş Tapınağı üzerine kurulu Süryani Kadim cemaatinin tarihi patrikhane merkezi.",
+            history: "M.S. 493 yılında inşa edilen manastır, adını çevresinde yetişen safran (zafaran) bitkisinden alır. Temelinde M.Ö. dönemlere ait bir Güneş Tapınağı bulunur; tavandaki harçsız kilit taşları mühendislik harikasıdır. 1160-1932 yılları arasında Süryani Ortodoks Patrikliği'nin merkezi olmuştur.",
+            hours: "09:00 - 17:00",
+            fee: "Giriş ücreti uygulanır (Rehberli tur dahil)",
+            duration: "1 - 1.5 saat",
+            tip: "Manastır avlusundaki tarihi çay bahçesinde mutlaka safranlı çay ve Süryani çöreği (kliçe) deneyin."
+          },
+          {
+            id: "dara-antik-kenti",
+            name: "Dara Antik Kenti",
+            district: "Artuklu",
+            category: "Antik Kent",
+            coords: "37.1778, 40.9558",
+            address: "Oğuz Köyü, Mardin-Nusaybin Yolu, Artuklu / Mardin",
+            artwork: "ruins",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Ancient%20City%20of%20Dara%20(2021).jpg?width=800",
+            summary: "Doğu Roma'nın sınır garnizonu; dev yeraltı su sarnıçları ve kaya mezarlarıyla 'Mezopotamya'nın Efes'i'.",
+            history: "Doğu Roma İmparatoru I. Anastasius tarafından M.S. 505 yılında Sasani sınırını korumak amacıyla kurulmuştur. Kayalara oyulmuş dev su sarnıçları (Zindan), çok katlı toplu kaya mezar alanı (Nekropol), kilise, agora ve 4 km'lik sur kalıntılarıyla bölgenin en görkemli antik kentidir.",
+            hours: "08:30 - 19:00",
+            fee: "Ücretsiz",
+            duration: "1.5 - 2 saat",
+            tip: "Hem Nekropol (kaya mezarları) alanını hem de köy içindeki dev yeraltı sarnıcını ayrı ayrı gezin."
+          },
+          {
+            id: "mor-gabriel-manastiri",
+            name: "Mor Gabriel (Deyrulumur) Manastırı",
+            district: "Midyat",
+            category: "İnanç Merkezi",
+            coords: "37.3219, 41.5394",
+            address: "Yayvantepe / Gülgöze Mevkii, Midyat / Mardin",
+            artwork: "monastery",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Monastery%20Mor%20Gabriel%20Turkey.jpg?width=800",
+            summary: "397 yılında kurulan, dünyanın ayakta kalan en eski Süryani Ortodoks manastırlarından biri.",
+            history: "Tur Abdin platosunun kalbinde M.S. 397 yılında Mor Şmuel ve Mor Şemun tarafından kurulmuştur. 'Rahiplerin Meskeni' anlamına gelen Deyrulumur adıyla da bilinir. 6. yüzyıl mozaikleri ve Theodora Kubbesi ile erken Hristiyanlık mimarisinin eşsiz hazinesidir.",
+            hours: "09:00 - 16:30",
+            fee: "Giriş ücreti / bağış usulü",
+            duration: "1 - 1.5 saat",
+            tip: "Aktif bir manastır olduğu için ziyaret sırasında sessizliğe ve kıyafet kurallarına özen gösterin."
+          },
+          {
+            id: "midyat-konukevi",
+            name: "Midyat Konukevi & Telkari Çarşısı",
+            district: "Midyat",
+            category: "Seyir & Çarşı",
+            coords: "37.4189, 41.3703",
+            address: "Akçakaya Mah., Eski Midyat, Midyat / Mardin",
+            artwork: "mansion",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Midyat%20(6).jpg?width=800",
+            summary: "Üç katlı görkemli taş konağı, kemerli eyvanları ve gümüş telkari sanatının kalbi olan tarihi sokakları.",
+            history: "Midyat'ın sivil mimari dokusunu en iyi yansıtan Midyat Devlet Konukevi, üç katlı teraslı yapısı ve nahit taşı oymacılığıyla ünlüdür. Çevresindeki Eski Midyat sokaklarında yüzyıllardır süregelen gümüş telkari atölyeleri ve Gelüşke Hanı gibi tarihi hanlar yer alır.",
+            hours: "08:30 - 19:00",
+            fee: "Cüzi giriş ücreti",
+            duration: "1.5 - 2 saat",
+            tip: "Konukevinin en üst terasından Eski Midyat'ı izleyip çarşıda el yapımı telkari gümüşleri inceleyin."
+          },
+          {
+            id: "mardin-muzesi",
+            name: "Mardin Müzesi & Sabancı Kent Müzesi",
+            district: "Artuklu",
+            category: "Tarihi Yapı",
+            coords: "37.3133, 40.7336",
+            address: "Şar Mah., Cumhuriyet Meydanı Yanı, Artuklu / Mardin",
+            artwork: "museum",
+            image: "https://commons.wikimedia.org/wiki/Special:FilePath/Grave%20Goods%2C%20Bracelets%20and%20Glass%20Bottles%2C%20Boncuklu%20Tarla%2C%20Ilisu%20Dam%2C%20Mardin%20Museum%2C%20Turkey%20(1).jpg?width=800",
+            summary: "1895 yapımı Süryani Katolik Patrikhanesi binasında Tunç Çağı'ndan Osmanlı'ya uzanan arkeoloji koleksiyonu.",
+            history: "1895 yılında Süryani Katolik Patrikhanesi olarak inşa ettirilen görkemli konak, 2000 yılından beri Mardin Müzesi olarak hizmet vermektedir. Asur, Urartu, Roma, Bizans, Artuklu ve Osmanlı dönemlerine ait binlerce eser sergilenir.",
+            hours: "08:30 - 17:30",
+            fee: "MüzeKart geçerlidir",
+            duration: "1 saat",
+            tip: "Müze çıkışında hemen yakındaki Sabancı Kent Müzesi ve Dilek Sabancı Sanat Galerisi'ni de gezebilirsiniz."
+          },
+          {
+            id: "bakircilar-carsisi",
+            name: "Tarihi Mardin Çarşıları & Abbaralar",
+            district: "Artuklu",
+            category: "Seyir & Çarşı",
+            coords: "37.3130, 40.7365",
+            address: "1. Cadde ve Alt Sokaklar (Bakırcılar, Revaklı Çarşı), Artuklu",
+            artwork: "mansion",
+            summary: "Bakır ustaları, baharatçılar, bıttım sabunu dükkanları ve evlerin altından geçen serin taş tüneller (abbara).",
+            history: "Mardin'in yüzyıllardır ticaret merkezi olan Tarihi Çarşılar; Kayseriye Bedesteni, Revaklı Çarşı, Marangozlar ve Bakırcılar Çarşısı'ndan oluşur. Sokakları birbirine bağlayan ve yazın serinlik sağlayan taş kemerli geçitlere 'abbara' adı verilir.",
+            hours: "09:00 - 20:00",
+            fee: "Ücretsiz",
+            duration: "1.5 - 2 saat",
+            tip: "Mavi badem şekeri, dibek kahvesi, bıttım sabunu ve el dövmesi bakır ürünleri buradan alabilirsiniz."
+          },
+          {
+            id: "beyazsu-vadisi",
+            name: "Beyazsu Vadisi",
+            district: "Nusaybin",
+            category: "Doğa & Kültür",
+            coords: "37.1525, 41.2422",
+            address: "Midyat - Nusaybin Karayolu Üzeri, Nusaybin / Mardin",
+            artwork: "nature",
+            summary: "Kurak Mezopotamya coğrafyasının ortasında buz gibi kaynak suları ve söğüt ağaçlarıyla doğal bir vaha.",
+            history: "Midyat ile Nusaybin arasındaki derin vadiden doğan Beyazsu, berrak kaynak suları ve su üzerine kurulu tahta şark köşeleriyle bölgenin en sevilen dinlenme alanıdır.",
+            hours: "Gün boyu açık",
+            fee: "Ücretsiz",
+            duration: "1.5 - 3 saat",
+            tip: "Midyat - Mardin arası yolculukta öğle yemeği ve çay molası için idealdir."
+          },
+          {
+            id: "savur-kalesi",
+            name: "Savur Kalesi & Hacı Abdullah Bey Konağı",
+            district: "Savur",
+            category: "Tarihi Yapı",
+            coords: "37.5411, 40.8886",
+            address: "Savur İlçe Merkezi, Savur / Mardin",
+            artwork: "ruins",
+            summary: "Yeşil Savur Çayı vadisine bakan tarihi kale, taş konaklar ve 'Küçük Mardin' atmosferi.",
+            history: "Mardin'in kuzeydoğusunda yer alan Savur, dik yamaçlara kurulmuş taş evleri ve hemen altındaki yemyeşil vadisiyle 'Küçük Mardin' olarak anılır. Hacı Abdullah Bey Konağı, bölgenin sivil mimari zarafetini yansıtır.",
+            hours: "Gün boyu",
+            fee: "Ücretsiz",
+            duration: "1.5 saat",
+            tip: "Savur yakınlarındaki Kıllıt (Dereiçi) Süryani Köyü ile aynı rotada gezebilirsiniz."
+          },
+          {
+            id: "killit-koyu",
+            name: "Kıllıt (Dereiçi) Tarihi Süryani Köyü",
+            district: "Savur",
+            category: "Doğa & Kültür",
+            coords: "37.4985, 40.9297",
+            address: "Dereiçi Köyü, Savur / Mardin",
+            artwork: "monastery",
+            summary: "Üç farklı kilise ve manastır kalıntısına ev sahipliği yapan, bağları ve taş sokaklarıyla huzurlu köy.",
+            history: "Savur'a yaklaşık 10 km mesafedeki Kıllıt (Dereiçi) köyü, Süryani Ortodoks, Katolik ve Protestan kiliselerini bir arada barındırmasıyla benzersizdir. Bağcılık ve şarap kültürüyle de tanınır.",
+            hours: "Gün boyu (Kilise ziyareti için gündüz saatleri)",
+            fee: "Ücretsiz",
+            duration: "1 saat",
+            tip: "Köydeki Mor Yuhanna Kilisesi'ni ziyaret edip köyün taş sokaklarında yürüyüş yapın."
           }
-        }
-      });
+        ],
+        restaurants: [
+          {
+            id: "rest-deyrulzafaran",
+            name: "Deyrulzafaran Manastırı Çay Bahçesi & Safranlı Çay Evi",
+            district: "Artuklu",
+            category: "Tarihi Yer İçi",
+            rating: 4.8,
+            price: "₺",
+            coords: "37.3042, 40.7931",
+            address: "Deyrulzafaran Manastırı Avlusu İçi, Artuklu / Mardin",
+            artwork: "monastery",
+            signature: "Safranlı Çay, Tarçınlı Süryani Çayı, Kliçe (Süryani Çöreği), Badem Şekeri",
+            summary: "Tarihi manastırın taş kemerli avlusunda, yüzyıllık atmosfer eşliğinde otantik içecek ve atıştırmalık molası.",
+            history: "Deyrulzafaran Manastırı ziyareti sırasında veya sonrasında hemen avlu içerisindeki gölgelik taş bölümde hizmet verir. Bölgeye özgü safranlı ve kakuleli çaylarıyla ziyaretçilerden en yüksek puanları alan duraklardan biridir.",
+            hours: "09:00 - 17:00",
+            tip: "Manastır turu bittikten sonra bahçede dinlenip Süryani çöreği tatmayı unutmayın."
+          },
+          {
+            id: "rest-cercis-murat",
+            name: "Cercis Murat Konağı",
+            district: "Artuklu",
+            category: "Yöresel Mutfak",
+            rating: 4.7,
+            price: "₺₺₺",
+            coords: "37.3138, 40.7324",
+            address: "1. Cadde No:517, Cumhuriyet Meydanı Yakını, Artuklu / Mardin",
+            artwork: "mansion",
+            signature: "Kaburga Dolması, Sembusek, Alluciye (Erik Yahnisi), İkbebet, Kişk Çorbası",
+            summary: "1888 yapımı tarihi taş konakta, Mardin gastronomisini dünyaya tanıtan ödüllü yöresel mutfak.",
+            history: "Mardin mutfağının unutulmaya yüz tutmuş yemeklerini yeniden canlandıran Şef Ebru Baybara Demir tarafından hayata geçirilen konak, tarihi taş avlusunda geleneksel Mardin ve Süryani yemekleri sunar.",
+            hours: "11:30 - 22:30",
+            tip: "Akşam yemeği ve teras masaları için önceden rezervasyon yaptırmanız önerilir."
+          },
+          {
+            id: "rest-leyli-muse",
+            name: "Leyli Muse Mutfak",
+            district: "Artuklu",
+            category: "Yöresel Mutfak",
+            rating: 4.7,
+            price: "₺₺",
+            coords: "37.3121, 40.7341",
+            address: "Medrese Mah., 1. Cadde Altı Tarihi Sokak, Artuklu / Mardin",
+            artwork: "medrese",
+            signature: "İncirli Kuzu, Hımmıs, Firik Pilavı, Sembusek, Süryani Şarabı Eşleşmeleri",
+            summary: "Tarihi Mardin sokaklarının içinde, özenle restore edilmiş taş konakta butik yöresel lezzetler.",
+            history: "Sıcak atmosferi, taş kemerli salonu ve geleneksel tariflere sadık kalarak sunduğu modern dokunuşlu Mardin yemekleriyle yüksek ziyaretçi memnuniyetine sahiptir.",
+            hours: "12:00 - 22:00",
+            tip: "Dar Mardin sokaklarından yürüyerek kolayca ulaşılabilir; akşam saatlerinde atmosferi çok keyiflidir."
+          },
+          {
+            id: "rest-shmayaa",
+            name: "Shmayaa Tarihi Konak & Teras Restoran",
+            district: "Midyat",
+            category: "Tarihi Yer İçi",
+            rating: 4.7,
+            price: "₺₺",
+            coords: "37.4195, 41.3698",
+            address: "Ortaçarşı Mah., Eski Midyat, Midyat / Mardin",
+            artwork: "mansion",
+            signature: "Midyat Tava, İçli Köfte, Süryani Mezeleri, Mırra",
+            summary: "Eski Midyat'ta 150 yıllık tarihi konak terasında, taş evler manzaralı otantik Midyat mutfağı.",
+            history: "Midyat Konukevi ve Gelüşke Hanı'na yürüme mesafesindeki tarihi taş konakta, hem konaklama hem de dışarıdan gelen misafirlere yönelik yüksek puanlı restoran hizmeti sunar.",
+            hours: "09:00 - 22:30",
+            tip: "Gün batımında Eski Midyat'ın minare ve çan kuleleri siluetine karşı akşam yemeği için idealdir."
+          },
+          {
+            id: "rest-bagdadi",
+            name: "Bağdadi Restoran",
+            district: "Artuklu",
+            category: "Yöresel Mutfak",
+            rating: 4.6,
+            price: "₺₺₺",
+            coords: "37.3125, 40.7310",
+            address: "1. Cadde, Mezopotamya Ovası Cephesi, Artuklu / Mardin",
+            artwork: "mansion",
+            signature: "Mardin Tabağı (İrok, İkbebet, Sembusek), Kaburga Dolması, Harire Tatlısı",
+            summary: "Mezopotamya Ovası'na bakan geniş taş terasıyla ünlü, tarihi konakta fine-dining yöresel deneyim.",
+            history: "Eski Mardin'in en güzel manzaralı teraslarından birine sahip olan Bağdadi, taş işçiliğiyle süslü iç mekanı ve zengin yöresel menüsüyle öne çıkar.",
+            hours: "12:00 - 23:00",
+            tip: "İlk kez Mardin'e geliyorsanız tüm lezzetleri tatmak için 'Mardin Tabağı' sipariş edebilirsiniz."
+          },
+          {
+            id: "rest-seyr-i-merdin",
+            name: "Seyr-i Merdin",
+            district: "Artuklu",
+            category: "Tarihi Yer İçi",
+            rating: 4.6,
+            price: "₺₺",
+            coords: "37.3136, 40.7355",
+            address: "Ulucami Mah., Zinciriye Medresesi Altı, Artuklu / Mardin",
+            artwork: "dome",
+            summary: "Zinciriye Medresesi ve Ulu Camii'nin hemen yanında, tarihi çarşı ve ova manzaralı teras restoran & kafe.",
+            history: "Tarihi dokunun tam kalbinde yer alan mekan, hem Mardin yöresel yemekleri hem de serpme kahvaltı ve dibek kahvesi molaları için ziyaretçilerin favorisidir.",
+            hours: "08:30 - 23:00",
+            signature: "Serpme Mardin Kahvaltısı, Kaburga Dolması, Dibek Kahvesi, Künefe",
+            tip: "Zinciriye Medresesi gezisinden hemen sonra dinlenmek için yürüyerek 2 dakikada ulaşabilirsiniz."
+          },
+          {
+            id: "rest-kebapci-rido",
+            name: "Kebapçı Rıdo",
+            district: "Artuklu",
+            category: "Yöresel Mutfak",
+            rating: 4.6,
+            price: "₺₺",
+            coords: "37.3132, 40.7372",
+            address: "1. Cadde, Tarihi Çarşı Girişi, Artuklu / Mardin",
+            artwork: "mosque",
+            signature: "Mardin Zırh Kebabı, Urfa & Adana Kebap, Közlenmiş Soğan ve Sumaklı Salata",
+            summary: "Eski Mardin'in köklü esnaf lokantalarından; zırhla çekilmiş kuzu etinden meşhur Mardin kebabı.",
+            history: "Yıllardır aynı noktada hizmet veren Kebapçı Rıdo, süslü sunumlardan ziyade lezzete odaklanan samimi atmosferi ve taze zırh kebabıyla yerel halkın da ilk tercihidir.",
+            hours: "10:00 - 21:00",
+            tip: "Öğle saatlerinde oldukça yoğun olur; hızlı ve lezzetli bir öğle yemeği için birebirdir."
+          },
+          {
+            id: "rest-geluske-hani",
+            name: "Tarihi Gelüşke Hanı Restoran & Kafe",
+            district: "Midyat",
+            category: "Tarihi Yer İçi",
+            rating: 4.6,
+            price: "₺₺",
+            coords: "37.4198, 41.3712",
+            address: "Eski Midyat Çarşısı, Gelüşke Hanı İçi, Midyat / Mardin",
+            artwork: "mansion",
+            signature: "Sac Kavurma, Midyat Kebabı, Menengiç & Dibek Kahvesi",
+            summary: "1903 yapımı tarihi kervansaray avlusunda, taş kemerler altında yemek ve kahve keyfi.",
+            history: "Eski Midyat'ın en önemli tarihi hanlarından Gelüşke Hanı'nın avlusunda yer alır. Telkari çarşısını gezdikten sonra tarihi taş atmosferde yemek yemek için en otantik noktadır.",
+            hours: "08:30 - 22:00",
+            tip: "Hanın üst katındaki taş odaları ve telkari atölyelerini de gezmeyi unutmayın."
+          },
+          {
+            id: "rest-beyazsu",
+            name: "Beyazsu Alabalık & Su Üstü Şark Köşeleri",
+            district: "Nusaybin",
+            category: "Tarihi Yer İçi",
+            rating: 4.6,
+            price: "₺₺",
+            coords: "37.1525, 41.2422",
+            address: "Beyazsu Vadisi, Midyat - Nusaybin Yolu, Nusaybin / Mardin",
+            artwork: "nature",
+            summary: "Buz gibi akan kaynak suyunun tam üzerine kurulu tahta köşklerde taze alabalık ve sac tava.",
+            history: "Beyazsu Vadisi boyunca sıralanan su üstü tesisler, özellikle yaz sıcağında ayaklarınızı serin suya yakın tutarak yemek yiyebileceğiniz benzersiz bir doğa deneyimi sunar.",
+            hours: "08:00 - 22:00",
+            signature: "Kiremitte Alabalık, Kuzu Sac Tava, Köy Kahvaltısı, Semaver Çayı",
+            tip: "Su kenarındaki gölgelik tahta köşkleri tercih edin."
+          },
+          {
+            id: "rest-antik-sur",
+            name: "Antik Sur Restoran",
+            district: "Artuklu",
+            category: "Yöresel Mutfak",
+            rating: 4.5,
+            price: "₺₺",
+            coords: "37.3129, 40.7358",
+            address: "Ulucami Mah., 1. Cadde No:246, Artuklu / Mardin",
+            artwork: "mosque",
+            signature: "Tandır, Kaburga Dolması, Dobo (Süryani Kuzu Yemeği), Künefe",
+            summary: "Ulu Camii'ye birkaç adım mesafede, kemerli tarihi taş mekanda geleneksel Mardin yemekleri.",
+            history: "Tarihi çarşı gezisi sırasında kolayca ulaşılabilen konumu, taş tonozlu iç salonu ve zengin et yemekleriyle öne çıkar.",
+            hours: "10:00 - 22:30",
+            tip: "Süryani mutfağının özel lezzeti 'Dobo' (sarımsak ve bademli kuzu) yemek isterseniz önceden sorun."
+          },
+          {
+            id: "rest-kasimiye-terasi",
+            name: "Kasımiye Seyir Terası & Dibek Kahvecisi",
+            district: "Artuklu",
+            category: "Kahve & Tatlı",
+            rating: 4.5,
+            price: "₺",
+            coords: "37.3098, 40.7232",
+            address: "Kasımiye Medresesi Çıkışı, Cumhuriyet Mah., Artuklu / Mardin",
+            artwork: "medrese",
+            summary: "Kasımiye Medresesi'nin hemen yanında, Mezopotamya gün batımına karşı mırra ve dibek kahvesi.",
+            history: "Medrese ziyaretinden çıkanların gün batımını izlemek için uğradığı seyir noktasında geleneksel Mardin dibek kahvesi, mırra ve badem şekeri ikram edilir.",
+            hours: "09:00 - 22:00",
+            signature: "Mardin Dibek Kahvesi, Acı Kahve (Mırra), Menengiç Kahvesi",
+            tip: "Gün batımından 30 dakika önce gidip ovaya bakan ön masalardan birini kapın."
+          },
+          {
+            id: "rest-mezopotamya-kahve",
+            name: "Tarihi Artuklu Kervansarayı & Kahve Evi",
+            district: "Artuklu",
+            category: "Kahve & Tatlı",
+            rating: 4.5,
+            price: "₺₺",
+            coords: "37.3134, 40.7340",
+            address: "1. Cadde, Eski Mardin Çarşısı, Artuklu / Mardin",
+            artwork: "mansion",
+            signature: "Kervansaray Kahvaltısı, Mırra, Harire Tatlısı, Cevizli Sucuk",
+            summary: "Tarihi taş kervansaray atmosferinde yöresel kahvaltı ve akşamüstü kahve molası.",
+            history: "Eski Mardin'in ana caddesi üzerinde, yüksek taş kemerli avlusuyla sıcaklardan kaçıp soluklanabileceğiniz tarihi bir durak.",
+            hours: "08:00 - 23:00",
+            tip: "Mardin'e özgü pekmezli 'Harire' tatlısını burada deneyebilirsiniz."
+          }
+        ]
+      }
+    ];
 
-      saveCategories();
-      closeAssignCategoryModal();
-      clearSelection();
-      alert(`Seçilen göndericiler '${catName}' sekmesine sabitlendi!`);
-      loadAllMessages();
+    // =========================================================================
+    // TELEFON DOSYA DEPOLAMA & YEDEKLEME YÖNETİMİ
+    // =========================================================================
+    const LOCAL_FALLBACK_KEY = "sehir_rehberi_app_v2";
+    let appState = loadAppState();
+    let activeCityId = appState.cities[0]?.id || "mardin";
+    let activeSection = "places"; // "places" | "restaurants"
+    let activeCategory = "Tümü";
+
+    function hasAndroidBridge() {
+      return typeof window.AndroidBridge !== "undefined" && window.AndroidBridge !== null;
     }
 
-    function initSims() {
-      const bridge = getBridge();
-      if (bridge && bridge.getActiveSimSlots) {
+    function loadAppState() {
+      let raw = "";
+      if (hasAndroidBridge() && typeof window.AndroidBridge.loadGuideData === "function") {
         try {
-          detectedSims = JSON.parse(bridge.getActiveSimSlots() || "[]");
-        } catch(e) {
-          detectedSims = [];
-        }
+          raw = window.AndroidBridge.loadGuideData();
+        } catch (e) {}
       }
-      const select = document.getElementById('compose-sim-select');
-      if (detectedSims.length > 0) {
-        select.innerHTML = detectedSims.map(s => `
-          <option value="${s.subId}">SIM ${s.slotIndex} (${s.carrier})</option>
-        `).join('');
+      if (!raw) {
+        try {
+          raw = localStorage.getItem(LOCAL_FALLBACK_KEY) || "";
+        } catch (e) {}
+      }
+
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.cities) && parsed.cities.length > 0) {
+            return {
+              cities: parsed.cities,
+              visited: parsed.visited || [],
+              notes: parsed.notes || {},
+              theme: parsed.theme || "dark"
+            };
+          }
+        } catch (e) {}
+      }
+
+      const initial = {
+        cities: JSON.parse(JSON.stringify(DEFAULT_CITIES)),
+        visited: [],
+        notes: {},
+        theme: "dark"
+      };
+      persistAppState(initial);
+      return initial;
+    }
+
+    function persistAppState(stateObj = appState) {
+      const json = JSON.stringify(stateObj);
+      try {
+        localStorage.setItem(LOCAL_FALLBACK_KEY, json);
+      } catch (e) {}
+
+      if (hasAndroidBridge() && typeof window.AndroidBridge.saveGuideData === "function") {
+        try {
+          const ok = window.AndroidBridge.saveGuideData(json);
+          updateStorageBadge(ok ? "Telefona yedeklendi (Documents/SehirRehberiBackup)" : "Yerel hafızaya kaydedildi");
+          return;
+        } catch (e) {}
+      }
+      updateStorageBadge("Tarayıcı + JSON dosya yedekleme aktif");
+    }
+
+    function updateStorageBadge(text) {
+      const el = document.getElementById("storageStatusText");
+      if (el) el.textContent = text;
+    }
+
+    // Theme
+    function applyTheme() {
+      if (appState.theme === "light") {
+        document.body.classList.add("light");
+        document.getElementById("themeBtn").textContent = "🌙";
       } else {
-        select.innerHTML = '<option value="0">Varsayılan SIM Kart</option>';
+        document.body.classList.remove("light");
+        document.getElementById("themeBtn").textContent = "☀️";
       }
     }
 
-    function resolveContact(sender) {
-      if (!sender) return { title: "Bilinmeyen", sub: "" };
-      const isPhone = /^(\+?[0-9\s\-()]+)$/.test(sender.trim());
-      if (!isPhone) return { title: sender, sub: "" };
-
-      if (contactCache[sender] !== undefined) {
-        return {
-          title: contactCache[sender] || sender,
-          sub: contactCache[sender] ? sender : ""
-        };
-      }
-
-      const bridge = getBridge();
-      if (bridge && bridge.getContactName) {
-        try {
-          const name = bridge.getContactName(sender);
-          contactCache[sender] = name || "";
-          if (name) return { title: name, sub: sender };
-        } catch(e) {}
-      }
-      return { title: sender, sub: "" };
+    function toggleTheme() {
+      appState.theme = appState.theme === "light" ? "dark" : "light";
+      applyTheme();
+      persistAppState();
     }
 
-    function handleSearch(val) {
-      searchQuery = val.trim().toLowerCase();
-      loadAllMessages();
-      loadSpamMessages();
-    }
-
-    function openContactPicker() {
-      const bridge = getBridge();
-      if (bridge && bridge.getAllContacts) {
-        try {
-          allContactsList = JSON.parse(bridge.getAllContacts() || "[]");
-        } catch(e) {
-          allContactsList = [];
-        }
+    // =========================================================================
+    // HARİTA VE PANO YARDIMCILARI
+    // =========================================================================
+    function getMapsUrl(item, cityName) {
+      if (item.coords && item.coords.trim()) {
+        const clean = item.coords.replace(/\s+/g, "");
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clean)}`;
       }
-      renderContacts(allContactsList);
-      document.getElementById('contact-picker-modal').classList.add('open');
+      const q = `${item.name}, ${item.address || item.district}, ${cityName}`;
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
     }
 
-    function closeContactPicker() {
-      document.getElementById('contact-picker-modal').classList.remove('open');
-    }
-
-    function renderContacts(list) {
-      const cont = document.getElementById('contact-list');
-      if (!list || list.length === 0) {
-        cont.innerHTML = '<div class="empty-state">Rehber kaydı bulunamadı.</div>';
-        return;
+    function openMaps(url) {
+      if (hasAndroidBridge() && typeof window.AndroidBridge.openExternalUrl === "function") {
+        window.AndroidBridge.openExternalUrl(url);
+      } else {
+        window.open(url, "_blank", "noopener,noreferrer");
       }
-      cont.innerHTML = list.map(c => `
-        <div class="contact-item" onclick="selectContact('${c.phone}')">
-          <span style="font-weight:600;">${c.name}</span>
-          <span style="color:var(--text-muted); font-size:0.8rem;">${c.phone}</span>
+    }
+
+    function copyText(txt) {
+      if (hasAndroidBridge() && typeof window.AndroidBridge.copyToClipboard === "function") {
+        window.AndroidBridge.copyToClipboard(txt);
+        showToast("Panoya kopyalandı: " + txt);
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(txt).then(() => showToast("Panoya kopyalandı: " + txt));
+      }
+    }
+
+    // =========================================================================
+    // SVG İLLÜSTRASYONLAR
+    // =========================================================================
+    function renderMedia(item) {
+      return `
+        <div style="position:relative; width:100%; height:100%;">
+          ${getArtworkSVG(item.artwork, item.name)}
+          ${item.image ? `<img src="${item.image}" alt="${item.name}" loading="lazy" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'" />` : ""}
         </div>
-      `).join('');
+      `;
     }
 
-    function filterContacts(q) {
-      const query = q.toLowerCase();
-      const filtered = allContactsList.filter(c => 
-        c.name.toLowerCase().includes(query) || c.phone.includes(query)
-      );
-      renderContacts(filtered);
+    function getArtworkSVG(type, title) {
+      const palettes = {
+        mosque:    { sky1: "#f59e0b", sky2: "#b45309", stone: "#fde68a", dark: "#451a03", accent: "#92400e" },
+        medrese:   { sky1: "#ea580c", sky2: "#9a3412", stone: "#fed7aa", dark: "#431407", accent: "#0284c7" },
+        dome:      { sky1: "#d97706", sky2: "#7c2d12", stone: "#fef3c7", dark: "#451a03", accent: "#b45309" },
+        monastery: { sky1: "#ca8a04", sky2: "#713f12", stone: "#fef08a", dark: "#422006", accent: "#a16207" },
+        ruins:     { sky1: "#0284c7", sky2: "#1e3a8a", stone: "#fde68a", dark: "#451a03", accent: "#92400e" },
+        mansion:   { sky1: "#e11d48", sky2: "#881337", stone: "#fed7aa", dark: "#4c0519", accent: "#be123c" },
+        museum:    { sky1: "#7c3aed", sky2: "#3b0764", stone: "#fde68a", dark: "#2e1065", accent: "#6d28d9" },
+        nature:    { sky1: "#0d9488", sky2: "#115e59", stone: "#99f6e4", dark: "#042f2e", accent: "#059669" }
+      };
+      const p = palettes[type] || palettes.medrese;
+
+      const motifs = {
+        mosque: `
+          <rect x="70" y="95" width="220" height="75" fill="${p.stone}" opacity="0.92"/>
+          <path d="M125 95 Q180 42 235 95 Z" fill="${p.stone}"/>
+          <rect x="255" y="28" width="22" height="142" fill="${p.stone}"/>
+          <polygon points="255,28 266,8 277,28" fill="${p.dark}"/>
+          <path d="M105 170 L105 128 Q120 112 135 128 L135 170 Z" fill="${p.dark}" opacity="0.75"/>
+          <path d="M165 170 L165 128 Q180 112 195 128 L195 170 Z" fill="${p.dark}" opacity="0.75"/>
+          <path d="M225 170 L225 128 Q240 112 255 128 L255 170 Z" fill="${p.dark}" opacity="0.75"/>
+        `,
+        medrese: `
+          <rect x="45" y="72" width="270" height="98" fill="${p.stone}" opacity="0.95"/>
+          <rect x="145" y="50" width="70" height="120" fill="${p.stone}"/>
+          <path d="M157 170 L157 98 Q180 72 203 98 L203 170 Z" fill="${p.dark}" opacity="0.82"/>
+          <path d="M68 115 Q83 98 98 115 L98 170 L68 170 Z" fill="${p.dark}" opacity="0.6"/>
+          <path d="M262 115 Q277 98 292 115 L292 170 L262 170 Z" fill="${p.dark}" opacity="0.6"/>
+          <rect x="130" y="156" width="100" height="14" rx="4" fill="${p.accent}" opacity="0.85"/>
+        `,
+        dome: `
+          <rect x="55" y="92" width="250" height="78" fill="${p.stone}" opacity="0.95"/>
+          <path d="M85 92 Q125 42 165 92 Z" fill="${p.stone}"/>
+          <path d="M195 92 Q235 42 275 92 Z" fill="${p.stone}"/>
+          <path d="M162 170 L162 115 Q180 95 198 115 L198 170 Z" fill="${p.dark}" opacity="0.8"/>
+        `,
+        monastery: `
+          <rect x="55" y="78" width="250" height="92" fill="${p.stone}" opacity="0.94"/>
+          <rect x="148" y="45" width="64" height="125" fill="${p.stone}"/>
+          <polygon points="145,45 180,22 215,45" fill="${p.dark}" opacity="0.85"/>
+          <rect x="177" y="10" width="6" height="14" fill="${p.stone}"/>
+          <rect x="173" y="14" width="14" height="4" fill="${p.stone}"/>
+          <path d="M162 170 L162 112 Q180 92 198 112 L198 170 Z" fill="${p.dark}" opacity="0.8"/>
+        `,
+        ruins: `
+          <rect x="55" y="110" width="250" height="60" fill="${p.stone}" opacity="0.88"/>
+          <path d="M80 170 L80 122 Q100 102 120 122 L120 170 Z" fill="${p.dark}" opacity="0.8"/>
+          <path d="M150 170 L150 122 Q170 102 190 122 L190 170 Z" fill="${p.dark}" opacity="0.8"/>
+          <path d="M220 170 L220 122 Q240 102 260 122 L260 170 Z" fill="${p.dark}" opacity="0.8"/>
+          <rect x="70" y="68" width="16" height="44" fill="${p.stone}"/>
+          <rect x="260" y="62" width="18" height="50" fill="${p.stone}"/>
+        `,
+        mansion: `
+          <rect x="50" y="115" width="260" height="55" fill="${p.stone}" opacity="0.95"/>
+          <rect x="80" y="75" width="200" height="42" fill="${p.stone}" opacity="0.9"/>
+          <rect x="120" y="42" width="120" height="35" fill="${p.stone}" opacity="0.96"/>
+          <path d="M100 117 L100 90 Q115 78 130 90 L130 117 Z" fill="${p.dark}" opacity="0.7"/>
+          <path d="M165 117 L165 90 Q180 78 195 90 L195 117 Z" fill="${p.dark}" opacity="0.7"/>
+          <path d="M230 117 L230 90 Q245 78 260 90 L260 117 Z" fill="${p.dark}" opacity="0.7"/>
+        `,
+        museum: `
+          <rect x="60" y="72" width="240" height="98" fill="${p.stone}" opacity="0.94"/>
+          <polygon points="48,72 180,32 312,72" fill="${p.dark}" opacity="0.85"/>
+          <rect x="85" y="90" width="14" height="80" fill="${p.dark}" opacity="0.35"/>
+          <rect x="261" y="90" width="14" height="80" fill="${p.dark}" opacity="0.35"/>
+          <path d="M160 170 L160 112 Q180 92 200 112 L200 170 Z" fill="${p.dark}" opacity="0.8"/>
+        `,
+        nature: `
+          <path d="M0 135 Q90 110 180 135 T360 135 L360 170 L0 170 Z" fill="${p.accent}" opacity="0.85"/>
+          <path d="M0 148 Q90 128 180 148 T360 148 L360 170 L0 170 Z" fill="${p.stone}" opacity="0.65"/>
+          <circle cx="95" cy="92" r="26" fill="${p.dark}" opacity="0.7"/>
+          <rect x="92" y="108" width="6" height="32" fill="${p.dark}"/>
+          <circle cx="265" cy="86" r="30" fill="${p.dark}" opacity="0.75"/>
+          <rect x="262" y="104" width="6" height="36" fill="${p.dark}"/>
+        `
+      };
+
+      const uid = Math.random().toString(36).slice(2, 8);
+      return `
+        <svg viewBox="0 0 360 170" style="width:100%; height:100%; display:block;" preserveAspectRatio="xMidYMid slice" role="img" aria-label="${title}">
+          <defs>
+            <linearGradient id="g-${uid}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${p.sky1}"/>
+              <stop offset="100%" stop-color="${p.sky2}"/>
+            </linearGradient>
+          </defs>
+          <rect width="360" height="170" fill="url(#g-${uid})"/>
+          <circle cx="295" cy="42" r="22" fill="#fffbeb" opacity="0.28"/>
+          ${motifs[type] || motifs.medrese}
+        </svg>
+      `;
     }
 
-    function selectContact(phone) {
-      document.getElementById('compose-phone').value = phone;
-      closeContactPicker();
+    // =========================================================================
+    // RENDER FONKSİYONLARI
+    // =========================================================================
+    function getActiveCity() {
+      return appState.cities.find(c => c.id === activeCityId) || appState.cities[0];
     }
 
-    function toggleSelectMessage(id, event) {
-      event.stopPropagation();
-      if (selectedMessages.has(id)) {
-        selectedMessages.delete(id);
-      } else {
-        selectedMessages.add(id);
-      }
-      updateSelectionToolbar();
+    function renderTabs() {
+      const container = document.getElementById("cityTabs");
+      const tabsHtml = appState.cities.map(city => {
+        const isActive = city.id === activeCityId;
+        const total = (city.places?.length || 0) + (city.restaurants?.length || 0);
+        return `
+          <button class="city-tab ${isActive ? "active" : ""}" onclick="selectCity('${city.id}')">
+            <span>${city.name}</span>
+            <span class="badge-count">${total}</span>
+          </button>
+        `;
+      }).join("");
+
+      container.innerHTML = tabsHtml + `
+        <button class="city-tab-add" onclick="openAddCityModal()">+ Yeni İl Ekle</button>
+      `;
     }
 
-    function updateSelectionToolbar() {
-      const bar = document.getElementById('selection-bar');
-      const countLabel = document.getElementById('selected-count');
-      if (selectedMessages.size > 0) {
-        bar.classList.add('active');
-        countLabel.innerText = `${selectedMessages.size} mesaj seçildi`;
-      } else {
-        bar.classList.remove('active');
-      }
-    }
+    function renderHero() {
+      const city = getActiveCity();
+      const places = city.places || [];
+      const rests = city.restaurants || [];
+      const visitedSet = new Set(appState.visited || []);
+      const visitedPlaces = places.filter(p => visitedSet.has(p.id)).length;
+      const pct = places.length > 0 ? Math.round((visitedPlaces / places.length) * 100) : 0;
 
-    function clearSelection() {
-      selectedMessages.clear();
-      updateSelectionToolbar();
-      loadAllMessages();
-      loadSpamMessages();
-    }
+      document.getElementById("countPlaces").textContent = places.length;
+      document.getElementById("countRestaurants").textContent = rests.length;
 
-    function copySelectedBodies() {
-      if (selectedMessages.size === 0) return;
-      const bridge = getBridge();
-      let allMsg = [];
-      if (bridge && bridge.getMessages) {
-        try {
-          const inb = JSON.parse(bridge.getMessages("inbox_messages") || "[]");
-          const snt = JSON.parse(bridge.getMessages("sent_messages") || "[]");
-          const spm = JSON.parse(bridge.getMessages("spam_messages") || "[]");
-          allMsg = [...inb, ...snt, ...spm];
-        } catch(e) {}
-      }
-      const texts = allMsg.filter(m => selectedMessages.has(m.id)).map(m => m.body).join('\n---\n');
-      navigator.clipboard.writeText(texts).then(() => {
-        alert("Seçilen mesajlar kopyalandı!");
-        clearSelection();
-      });
-    }
-
-    function deleteSelectedMessages() {
-      if (selectedMessages.size === 0) return;
-      if (!confirm(`${selectedMessages.size} adet mesaj kalıcı olarak silinsin mi? (Bir daha geri gelmeyecek)`)) return;
-
-      const ids = Array.from(selectedMessages);
-      const bridge = getBridge();
-      if (bridge && bridge.deleteMessagesBulk) {
-        bridge.deleteMessagesBulk("inbox_messages", JSON.stringify(ids));
-        bridge.deleteMessagesBulk("sent_messages", JSON.stringify(ids));
-        bridge.deleteMessagesBulk("spam_messages", JSON.stringify(ids));
-      }
-      clearSelection();
-    }
-
-    function toggleMoveSelected() {
-      if (selectedMessages.size === 0) return;
-      const bridge = getBridge();
-      if (!bridge || !bridge.moveMessage) return;
-
-      const isSpamTab = currentMainTab === 'spam';
-      const fromKey = isSpamTab ? "spam_messages" : "inbox_messages";
-      const toKey = isSpamTab ? "inbox_messages" : "spam_messages";
-
-      selectedMessages.forEach(id => {
-        bridge.moveMessage(fromKey, toKey, id);
-      });
-
-      alert(`Mesajlar ${isSpamTab ? 'Gelen Kutusuna' : 'Karantinaya'} taşındı.`);
-      clearSelection();
-    }
-
-    function handleSyncDeviceSms() {
-      const bridge = getBridge();
-      if (bridge && bridge.syncDeviceSms) {
-        const count = bridge.syncDeviceSms();
-        alert(`${count} adet yeni SMS senkronize edildi.`);
-        loadAllMessages();
-      }
-    }
-
-    function switchSubTab(type) {
-      currentFilter = type;
-      const parent = event.currentTarget.parentElement;
-      parent.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-      loadAllMessages();
-    }
-
-    function switchSimFilter(sim) {
-      currentSimFilter = sim;
-      const parent = event.currentTarget.parentElement;
-      parent.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-      loadAllMessages();
-    }
-
-    function openComposeModal() {
-      initSims();
-      document.getElementById('compose-phone').value = "";
-      document.getElementById('compose-message').value = "";
-      document.getElementById('compose-modal').classList.add('open');
-    }
-
-    function closeComposeModal() {
-      document.getElementById('compose-modal').classList.remove('open');
-    }
-
-    function handleSendSms() {
-      const phone = document.getElementById('compose-phone').value.trim();
-      const message = document.getElementById('compose-message').value.trim();
-      const subId = parseInt(document.getElementById('compose-sim-select').value, 10) || 0;
-
-      if (!phone || !message) {
-        alert("Lütfen telefon numarası ve mesaj yazın.");
-        return;
-      }
-
-      const bridge = getBridge();
-      if (bridge && bridge.sendSms) {
-        bridge.sendSms(phone, message, subId);
-        closeComposeModal();
-        setTimeout(loadAllMessages, 300);
-      }
-    }
-
-    function openChatView(target) {
-      if (selectedMessages.size > 0) return;
-      activeChatTarget = target;
-      const display = resolveContact(target);
-      document.getElementById('chat-title').innerText = display.title;
-      document.getElementById('chat-sub').innerText = display.sub || target;
-      document.getElementById('chat-view').classList.add('open');
-      renderChatThread();
-    }
-
-    function closeChatView() {
-      activeChatTarget = null;
-      document.getElementById('chat-view').classList.remove('open');
-      loadAllMessages();
-    }
-
-    function sendReplySms() {
-      const input = document.getElementById('chat-input');
-      const text = input.value.trim();
-      if (!text || !activeChatTarget) return;
-
-      const bridge = getBridge();
-      if (bridge && bridge.sendSms) {
-        bridge.sendSms(activeChatTarget, text, 0);
-        input.value = "";
-        setTimeout(renderChatThread, 300);
-      }
-    }
-
-    function renderChatThread() {
-      if (!activeChatTarget) return;
-      const bridge = getBridge();
-      let inbox = [];
-      let sent = [];
-
-      if (bridge && bridge.getMessages) {
-        try {
-          inbox = JSON.parse(bridge.getMessages("inbox_messages") || "[]");
-          sent = JSON.parse(bridge.getMessages("sent_messages") || "[]");
-        } catch(e) {}
-      }
-
-      const thread = [];
-      inbox.forEach(m => {
-        if (m.sender === activeChatTarget) thread.push({ ...m, type: 'in' });
-      });
-      sent.forEach(m => {
-        if (m.recipient === activeChatTarget) thread.push({ ...m, type: 'out' });
-      });
-
-      thread.sort((a, b) => a.id - b.id);
-
-      const body = document.getElementById('chat-body');
-      if (thread.length === 0) {
-        body.innerHTML = '<div class="empty-state">Mesaj bulunmuyor.</div>';
-      } else {
-        body.innerHTML = thread.map(m => `
-          <div class="chat-bubble ${m.type}">
-            <div>${m.body}</div>
-            <div class="bubble-time">${m.simSlot ? `[${m.simSlot}] ` : ''}${m.date}</div>
+      document.getElementById("cityHero").innerHTML = `
+        <div class="hero-info">
+          <div class="hero-tags">
+            <span class="tag-plate">${city.plate ? city.plate + " • " : ""}${city.name}</span>
+            <span class="tag-region">${city.region || "Türkiye"}</span>
           </div>
-        `).join('');
-      }
-      body.scrollTop = body.scrollHeight;
+          <h2>${city.subtitle || city.name + " Rehberi"}</h2>
+          <p>${city.description || ""}</p>
+        </div>
+
+        <div class="hero-stats">
+          <div style="display:flex; justify-content:space-between; font-size:12px;">
+            <span style="color:var(--muted); font-weight:600;">Gezi İlerlemesi</span>
+            <span style="font-weight:700;">${visitedPlaces} / ${places.length} Yer</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:${pct}%"></div>
+          </div>
+          <div style="font-size:11px; color:var(--muted);">
+            ${rests.length} yüksek puanlı restoran & lezzet durağı dahil
+          </div>
+        </div>
+      `;
     }
 
-    function loadAllMessages() {
-      const bridge = getBridge();
-      let inbox = [];
-      let sent = [];
+    function renderCategories() {
+      const city = getActiveCity();
+      const list = activeSection === "places" ? (city.places || []) : (city.restaurants || []);
+      let cats = ["Tümü", ...new Set(list.map(x => x.category))];
+      if (activeSection === "restaurants") {
+        cats = ["Tümü", "4.6★ ve Üzeri", ...new Set(list.map(x => x.category))];
+      }
+      if (!cats.includes(activeCategory)) activeCategory = "Tümü";
 
-      if (bridge && bridge.getMessages) {
-        try {
-          inbox = JSON.parse(bridge.getMessages("inbox_messages") || "[]").map(m => ({ ...m, kind: 'inbox', who: m.sender }));
-          sent = JSON.parse(bridge.getMessages("sent_messages") || "[]").map(m => ({ ...m, kind: 'sent', who: m.recipient }));
-        } catch(e) {}
+      document.getElementById("categoryPills").innerHTML = cats.map(c => `
+        <button class="pill ${c === activeCategory ? "active" : ""}" onclick="setCategory('${c}')">${c}</button>
+      `).join("");
+    }
+
+    function renderGrid() {
+      const city = getActiveCity();
+      const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+      const visitedSet = new Set(appState.visited || []);
+      let items = activeSection === "places" ? (city.places || []) : [...(city.restaurants || [])];
+
+      if (activeSection === "restaurants") {
+        items.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       }
 
-      let combined = [];
-      if (currentFilter === 'all') combined = [...inbox, ...sent];
-      else if (currentFilter === 'inbox') combined = inbox;
-      else if (currentFilter === 'sent') combined = sent;
-      else if (currentFilter === 'unassigned') combined = [...inbox, ...sent].filter(m => getSenderCategory(m.who) === null);
-
-      // Özel Dinamik Kategori Sekmesi Seçiliyse (Örn: BANKA)
-      if (currentMainTab !== 'all' && currentMainTab !== 'rules' && currentMainTab !== 'spam') {
-        const cat = categories.find(c => c.name === currentMainTab);
-        if (cat) {
-          const setSenders = new Set(cat.senders.map(s => s.toUpperCase()));
-          combined = combined.filter(m => setSenders.has((m.who || '').toUpperCase()));
+      const filtered = items.filter(item => {
+        let matchCat = true;
+        if (activeCategory === "4.6★ ve Üzeri") {
+          matchCat = (item.rating || 0) >= 4.6;
+        } else if (activeCategory !== "Tümü") {
+          matchCat = item.category === activeCategory;
         }
-      }
+        const matchQ = !q ||
+          (item.name || "").toLowerCase().includes(q) ||
+          (item.district || "").toLowerCase().includes(q) ||
+          (item.summary || "").toLowerCase().includes(q) ||
+          (item.signature || "").toLowerCase().includes(q) ||
+          (item.category || "").toLowerCase().includes(q);
+        return matchCat && matchQ;
+      });
 
-      // Atanmamışlar Checkbox Filtresi
-      if (onlyUnassigned && currentFilter !== 'unassigned') {
-        combined = combined.filter(m => getSenderCategory(m.who) === null);
-      }
+      const grid = document.getElementById("itemsGrid");
+      const empty = document.getElementById("emptyState");
 
-      // SIM Kart Filtresi
-      if (currentSimFilter !== 'all') {
-        combined = combined.filter(m => (m.simSlot || 'SIM 1') === currentSimFilter);
-      }
-
-      // Arama Filtresi
-      if (searchQuery) {
-        combined = combined.filter(m => {
-          const disp = resolveContact(m.who);
-          return m.body.toLowerCase().includes(searchQuery) ||
-                 m.who.toLowerCase().includes(searchQuery) ||
-                 disp.title.toLowerCase().includes(searchQuery);
-        });
-      }
-
-      combined.sort((a, b) => b.id - a.id);
-
-      // Atanmamış mesaj sayısını hesaplayıp etikete yaz
-      const totalUnassigned = [...inbox, ...sent].filter(m => getSenderCategory(m.who) === null).length;
-      const badge = document.getElementById('unassigned-badge-count');
-      if (badge) badge.innerText = totalUnassigned > 0 ? `(${totalUnassigned} atanmamış)` : '';
-
-      const container = document.getElementById('messages-list');
-      if (combined.length === 0) {
-        container.innerHTML = '<div class="empty-state">Bu sekmede eşleşen mesaj bulunamadı.</div>';
+      if (filtered.length === 0) {
+        grid.innerHTML = "";
+        empty.classList.remove("hidden");
         return;
       }
 
-      container.innerHTML = combined.map(m => {
-        const display = resolveContact(m.who);
-        const isSent = m.kind === 'sent';
-        const isChecked = selectedMessages.has(m.id) ? 'checked' : '';
-        const simTag = m.simSlot || 'SIM 1';
-        const simBadgeClass = simTag === 'SIM 2' ? 'sim-2' : 'sim-1';
-        const assignedCat = getSenderCategory(m.who);
+      empty.classList.add("hidden");
+      grid.innerHTML = filtered.map(item => {
+        const mapsUrl = getMapsUrl(item, city.name);
+        const isVisited = visitedSet.has(item.id);
+        const isRest = activeSection === "restaurants";
 
         return `
-          <div class="sms-item ${m.kind}" onclick="openChatView('${m.who}')">
-            <input type="checkbox" class="sms-checkbox" ${isChecked} onclick="toggleSelectMessage(${m.id}, event)">
-            <div class="sms-content-wrap">
-              <div class="sms-header">
-                <span class="sms-sender">
-                  ${isSent ? '📤 Kime: ' : ''}${display.title}
-                  ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
-                  ${assignedCat ? `<span class="category-badge">📁 ${assignedCat}</span>` : ''}
-                  <span class="sim-badge ${simBadgeClass}">${simTag}</span>
-                </span>
-                <span class="sms-date">${m.date}</span>
+          <article class="card">
+            <div>
+              <div class="card-art" onclick="openDetailModal('${item.id}', '${activeSection}')">
+                ${renderMedia(item)}
+                <div class="card-badges-left">
+                  ${isRest ? `<span class="rating-badge">★ ${(item.rating || 4.5).toFixed(1)}</span>` : ""}
+                  <span class="glass-badge">${item.category}</span>
+                </div>
+                <button class="visited-btn ${isVisited ? "done" : ""}" onclick="event.stopPropagation(); toggleVisited('${item.id}')">
+                  ${isVisited ? (isRest ? "✓ Gidildi" : "✓ Gezildi") : "İşaretle"}
+                </button>
               </div>
-              <div class="sms-body">${m.body}</div>
+
+              <div class="card-body">
+                <h3 class="card-title" onclick="openDetailModal('${item.id}', '${activeSection}')">${item.name}</h3>
+                <div class="card-loc">
+                  <span>📍 ${item.district}, ${city.name}${isRest && item.price ? " • " + item.price : ""}</span>
+                </div>
+                <p class="card-desc">${item.summary}</p>
+                ${isRest && item.signature ? `<div style="font-size:11.5px; color:var(--primary); font-weight:600; margin-top:2px;">🍽️ ${item.signature}</div>` : ""}
+              </div>
             </div>
-          </div>
+
+            <div class="card-footer">
+              <button class="btn" onclick="openDetailModal('${item.id}', '${activeSection}')">
+                ${isRest ? "Menü & Tarif" : "Döküman"}
+              </button>
+              <button class="btn btn-primary" onclick="openMaps('${mapsUrl.replace(/'/g, "\\'")}')">
+                🗺️ Haritada Aç
+              </button>
+            </div>
+          </article>
         `;
-      }).join('');
+      }).join("");
     }
 
-    function loadSpamMessages() {
-      const bridge = getBridge();
-      let spamList = [];
-      if (bridge && bridge.getMessages) {
-        try {
-          spamList = JSON.parse(bridge.getMessages("spam_messages") || "[]");
-        } catch(e) {}
-      }
-
-      if (searchQuery) {
-        spamList = spamList.filter(m => {
-          const disp = resolveContact(m.sender);
-          return m.body.toLowerCase().includes(searchQuery) ||
-                 m.sender.toLowerCase().includes(searchQuery) ||
-                 disp.title.toLowerCase().includes(searchQuery);
-        });
-      }
-
-      const container = document.getElementById('spam-list');
-      if (spamList.length === 0) {
-        container.innerHTML = '<div class="empty-state">Karantinada eşleşen mesaj bulunmuyor.</div>';
-        return;
-      }
-
-      container.innerHTML = spamList.slice().reverse().map(m => {
-        const display = resolveContact(m.sender);
-        const isChecked = selectedMessages.has(m.id) ? 'checked' : '';
-        const simTag = m.simSlot || 'SIM 1';
-        const simBadgeClass = simTag === 'SIM 2' ? 'sim-2' : 'sim-1';
-
-        return `
-          <div class="sms-item spam">
-            <input type="checkbox" class="sms-checkbox" ${isChecked} onclick="toggleSelectMessage(${m.id}, event)">
-            <div class="sms-content-wrap">
-              <div class="sms-header">
-                <span class="sms-sender">
-                  ${display.title}
-                  ${display.sub ? `<span class="sender-sub">${display.sub}</span>` : ''}
-                  <span class="sim-badge ${simBadgeClass}">${simTag}</span>
-                </span>
-                <span class="sms-date">${m.date}</span>
-              </div>
-              <div class="sms-body">${m.body}</div>
-              <div class="sms-reason">🚨 ${m.reason}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
+    // =========================================================================
+    // ETKİLEŞİMLER VE DETAY MODALI
+    // =========================================================================
+    function selectCity(id) {
+      activeCityId = id;
+      activeCategory = "Tümü";
+      document.getElementById("searchInput").value = "";
+      renderAll();
     }
 
-    function clearSpam() {
-      if (confirm("Karantinadaki tüm mesajlar silinsin mi?")) {
-        const bridge = getBridge();
-        if (bridge && bridge.clearMessages) {
-          bridge.clearMessages("spam_messages");
-          loadSpamMessages();
+    function switchSection(sec) {
+      activeSection = sec;
+      activeCategory = "Tümü";
+      document.getElementById("tabPlacesBtn").classList.toggle("active", sec === "places");
+      document.getElementById("tabRestaurantsBtn").classList.toggle("active", sec === "restaurants");
+      renderCategories();
+      renderGrid();
+    }
+
+    function setCategory(cat) {
+      activeCategory = cat;
+      renderCategories();
+      renderGrid();
+    }
+
+    function toggleVisited(id) {
+      const set = new Set(appState.visited || []);
+      if (set.has(id)) set.delete(id);
+      else set.add(id);
+      appState.visited = [...set];
+      persistAppState();
+      renderHero();
+      renderGrid();
+    }
+
+    function openDetailModal(id, sec) {
+      const city = getActiveCity();
+      const list = sec === "restaurants" ? (city.restaurants || []) : (city.places || []);
+      const item = list.find(x => x.id === id);
+      if (!item) return;
+
+      const mapsUrl = getMapsUrl(item, city.name);
+      const isRest = sec === "restaurants";
+      const note = (appState.notes && appState.notes[id]) || "";
+
+      document.getElementById("detailArt").innerHTML = `
+        ${renderMedia(item)}
+        <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+        <div class="card-badges-left" style="top:auto; bottom:12px; left:14px;">
+          ${isRest ? `<span class="rating-badge">★ ${(item.rating || 4.5).toFixed(1)} Puan</span>` : ""}
+          <span class="glass-badge">${item.category}</span>
+          <span class="glass-badge">${item.district}, ${city.name}</span>
+        </div>
+      `;
+
+      document.getElementById("detailBody").innerHTML = `
+        <div>
+          <h2 style="margin:0; font-size:19px;">${item.name}</h2>
+          <p style="margin:4px 0 0 0; font-size:12.5px; color:var(--muted);">${item.address || item.district + ", " + city.name}</p>
+        </div>
+
+        <div>
+          <div class="info-label" style="color:var(--primary); margin-bottom:4px;">
+            ${isRest ? "Mekan Hakkında & Atmosfer" : "Tarihçe & Gezi Dökümanı"}
+          </div>
+          <p style="margin:0; font-size:13.5px; line-height:1.6;">${item.history}</p>
+        </div>
+
+        ${isRest && item.signature ? `
+          <div class="info-box">
+            <div class="info-label">Öne Çıkan Lezzetler</div>
+            <div class="info-val" style="color:var(--primary);">${item.signature}</div>
+          </div>
+        ` : ""}
+
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="info-label">Saatler</div>
+            <div class="info-val">${item.hours || "Gün boyu"}</div>
+          </div>
+          <div class="info-box">
+            <div class="info-label">${isRest ? "Fiyat Seviyesi" : "Giriş & Süre"}</div>
+            <div class="info-val">${isRest ? (item.price || "₺₺") : ((item.fee || "Ücretsiz") + " • " + (item.duration || "1 saat"))}</div>
+          </div>
+        </div>
+
+        ${item.tip ? `<div class="tip-box"><strong style="color:var(--primary);">İpucu:</strong> ${item.tip}</div>` : ""}
+
+        <div class="maps-box">
+          <div>
+            <div style="font-size:12.5px; font-weight:700;">Konum & Adres Tarifi</div>
+            <div style="font-size:11.5px; font-family:monospace; color:var(--muted);">
+              ${item.coords ? "Koordinat: " + item.coords : item.address}
+            </div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn" onclick="copyText('${(item.coords || item.address || item.name).replace(/'/g, "\\'")}')">Kopyala</button>
+            <button class="btn btn-primary" onclick="openMaps('${mapsUrl.replace(/'/g, "\\'")}')">🗺️ Google Haritalar'da Aç</button>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Kişisel Gezi / Lezzet Notum (Otomatik Telefona Kaydedilir)</label>
+          <textarea rows="2" placeholder="Bu mekanla ilgili kendi notunuzu yazın..." onchange="saveNote('${item.id}', this.value)">${note}</textarea>
+        </div>
+      `;
+
+      document.getElementById("detailModal").classList.remove("hidden");
+    }
+
+    function saveNote(id, val) {
+      if (!appState.notes) appState.notes = {};
+      appState.notes[id] = val;
+      persistAppState();
+      showToast("Notunuz telefona kaydedildi.");
+    }
+
+    function closeDetailModal() { document.getElementById("detailModal").classList.add("hidden"); }
+
+    // =========================================================================
+    // YENİ İL VE YENİ YER / RESTORAN EKLEME
+    // =========================================================================
+    function openAddCityModal() { document.getElementById("addCityModal").classList.remove("hidden"); }
+    function closeAddCityModal() { document.getElementById("addCityModal").classList.add("hidden"); }
+
+    function submitNewCity(e) {
+      e.preventDefault();
+      const name = document.getElementById("newCityName").value.trim();
+      if (!name) return;
+      const id = name.toLowerCase().replace(/[^a-z0-9]/gi, "-") + "-" + Date.now().toString(36);
+      appState.cities.push({
+        id,
+        name,
+        plate: document.getElementById("newCityPlate").value.trim(),
+        subtitle: document.getElementById("newCitySubtitle").value.trim() || `${name} Gezi & Lezzet Rehberi`,
+        region: "Türkiye",
+        description: document.getElementById("newCityDesc").value.trim() || `${name} ilindeki gezilecek yerler ve yüksek puanlı restoranlar.`,
+        places: [],
+        restaurants: []
+      });
+      persistAppState();
+      activeCityId = id;
+      e.target.reset();
+      closeAddCityModal();
+      renderAll();
+      showToast(`${name} sekmesi eklendi ve telefona yedeklendi!`);
+    }
+
+    function openAddEntryModal() {
+      document.getElementById("eType").value = activeSection === "restaurants" ? "restaurant" : "place";
+      toggleEntryFields();
+      document.getElementById("addEntryModal").classList.remove("hidden");
+    }
+    function closeAddEntryModal() { document.getElementById("addEntryModal").classList.add("hidden"); }
+
+    function toggleEntryFields() {
+      const isRest = document.getElementById("eType").value === "restaurant";
+      document.getElementById("restExtraFields").classList.toggle("hidden", !isRest);
+    }
+
+    function submitNewEntry(e) {
+      e.preventDefault();
+      const city = getActiveCity();
+      const isRest = document.getElementById("eType").value === "restaurant";
+      const cat = document.getElementById("eCategory").value;
+      const artMap = {
+        "Tarihi Yapı": "medrese", "İnanç Merkezi": "mosque", "Antik Kent": "ruins",
+        "Doğa & Kültür": "nature", "Seyir & Çarşı": "mansion", "Tarihi Yer İçi": "mansion",
+        "Yöresel Mutfak": "mansion", "Kahve & Tatlı": "medrese"
+      };
+
+      const entry = {
+        id: (isRest ? "rest-" : "place-") + Date.now().toString(36),
+        name: document.getElementById("eName").value.trim(),
+        district: document.getElementById("eDistrict").value.trim(),
+        category: cat,
+        coords: document.getElementById("eCoords").value.trim(),
+        address: document.getElementById("eAddress").value.trim() || `${document.getElementById("eDistrict").value.trim()}, ${city.name}`,
+        artwork: artMap[cat] || "medrese",
+        image: document.getElementById("eImage").value.trim(),
+        summary: document.getElementById("eSummary").value.trim(),
+        history: document.getElementById("eHistory").value.trim(),
+        hours: document.getElementById("eHours").value.trim() || "09:00 - 22:00",
+        tip: document.getElementById("eTip").value.trim()
+      };
+
+      if (isRest) {
+        entry.rating = parseFloat(document.getElementById("eRating").value) || 4.6;
+        entry.signature = document.getElementById("eSignature").value.trim();
+        entry.price = "₺₺";
+        if (!city.restaurants) city.restaurants = [];
+        city.restaurants.push(entry);
+        activeSection = "restaurants";
+      } else {
+        entry.fee = "Bilgi eklenmedi";
+        entry.duration = "1 saat";
+        if (!city.places) city.places = [];
+        city.places.push(entry);
+        activeSection = "places";
+      }
+
+      persistAppState();
+      e.target.reset();
+      closeAddEntryModal();
+      switchSection(activeSection);
+      renderHero();
+      showToast(`${entry.name} eklendi ve telefona kaydedildi!`);
+    }
+
+    // =========================================================================
+    // TELEFON DOSYA YEDEKLEME & GERİ YÜKLEME MODALI
+    // =========================================================================
+    function openBackupModal() {
+      if (hasAndroidBridge() && typeof window.AndroidBridge.getBackupDirectoryPath === "function") {
+        document.getElementById("backupPathDisplay").textContent = window.AndroidBridge.getBackupDirectoryPath() + "/rehber_yedek.json";
+      }
+      refreshBackupList();
+      document.getElementById("backupModal").classList.remove("hidden");
+    }
+
+    function closeBackupModal() { document.getElementById("backupModal").classList.add("hidden"); }
+
+    function createManualPhoneBackup() {
+      const json = JSON.stringify(appState);
+      if (hasAndroidBridge() && typeof window.AndroidBridge.createManualBackup === "function") {
+        const path = window.AndroidBridge.createManualBackup(json);
+        if (path) {
+          refreshBackupList();
+          showToast("Yedek oluşturuldu: " + path.split("/").pop());
+          return;
         }
       }
+      exportJsonDownload();
     }
 
-    function loadRules() {
-      const bridge = getBridge();
-      if (bridge && bridge.getMessages) {
+    function refreshBackupList() {
+      const container = document.getElementById("backupListContainer");
+      if (hasAndroidBridge() && typeof window.AndroidBridge.listBackupFiles === "function") {
         try {
-          const rules = bridge.getMessages("rules");
-          if (rules && rules !== "[]") return JSON.parse(rules);
-        } catch(e) {}
+          const files = JSON.parse(window.AndroidBridge.listBackupFiles() || "[]");
+          if (files.length === 0) {
+            container.innerHTML = `<div style="font-size:12px; color:var(--muted);">Henüz yedek dosyası yok. "Anlık Yedek Oluştur" butonuna basın.</div>`;
+            return;
+          }
+          container.innerHTML = files.map(f => `
+            <div class="backup-item">
+              <div>
+                <div style="font-weight:700;">${f.name}</div>
+                <div style="color:var(--muted); font-size:11px;">${f.date} • ${(f.size / 1024).toFixed(1)} KB</div>
+              </div>
+              <button class="btn btn-success" style="padding:6px 10px;" onclick="restorePhoneFile('${f.name}')">Geri Yükle</button>
+            </div>
+          `).join("");
+          return;
+        } catch (e) {}
       }
-      const local = localStorage.getItem(STORAGE_KEY);
-      return local ? JSON.parse(local) : { titles: ["BAHIS", "BET", "KASINO"], bcodes: ["B214", "B002"] };
+      container.innerHTML = `<div style="font-size:12px; color:var(--muted);">Tarayıcı önizlemesindesiniz. Android APK içinde telefondaki <code>Documents/SehirRehberiBackup/</code> klasörü burada otomatik listelenir.</div>`;
     }
 
-    function saveRules(rules) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(rules));
-      const bridge = getBridge();
-      if (bridge && bridge.saveStoreData) {
-        bridge.saveStoreData("rules", JSON.stringify(rules));
+    function restorePhoneFile(fileName) {
+      if (!confirm(`${fileName} yedeğini geri yüklemek istiyor musunuz?`)) return;
+      if (hasAndroidBridge() && typeof window.AndroidBridge.restoreBackupFile === "function") {
+        const content = window.AndroidBridge.restoreBackupFile(fileName);
+        if (content) {
+          appState = JSON.parse(content);
+          activeCityId = appState.cities[0]?.id || "mardin";
+          renderAll();
+          closeBackupModal();
+          showToast("Yedek başarıyla geri yüklendi!");
+          return;
+        }
       }
-      renderRules();
+      showToast("Yedek okunamadı.");
     }
 
-    function addRule(type) {
-      const input = document.getElementById(type === 'titles' ? 'input-title' : 'input-bcode');
-      const val = input.value.trim().toUpperCase();
-      if (!val) return;
-      const rules = loadRules();
-      if (!rules[type].includes(val)) {
-        rules[type].push(val);
-        saveRules(rules);
+    function exportJsonDownload() {
+      const blob = new Blob([JSON.stringify(appState, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `sehir-rehberi-yedek-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("JSON yedek dosyası indirildi.");
+    }
+
+    function importJsonFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          if (parsed && Array.isArray(parsed.cities)) {
+            appState = parsed;
+            persistAppState();
+            activeCityId = appState.cities[0]?.id || "mardin";
+            renderAll();
+            closeBackupModal();
+            showToast("JSON yedeği başarıyla geri yüklendi!");
+          } else {
+            showToast("Geçersiz yedek dosyası formatı.");
+          }
+        } catch (err) {
+          showToast("Dosya okunamadı.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function safeResetDefaults() {
+      if (!confirm("Önce mevcut verilerinizin yedeği alınacak, ardından varsayılan Mardin rehberine dönülecek. Onaylıyor musunuz?")) return;
+      if (hasAndroidBridge() && typeof window.AndroidBridge.createManualBackup === "function") {
+        window.AndroidBridge.createManualBackup(JSON.stringify(appState));
       }
-      input.value = "";
+      appState = {
+        cities: JSON.parse(JSON.stringify(DEFAULT_CITIES)),
+        visited: [],
+        notes: {},
+        theme: appState.theme || "dark"
+      };
+      persistAppState();
+      activeCityId = "mardin";
+      renderAll();
+      refreshBackupList();
+      showToast("Önce yedek alındı, sonra varsayılanlara dönüldü.");
     }
 
-    function removeRule(type, val) {
-      const rules = loadRules();
-      rules[type] = rules[type].filter(item => item !== val);
-      saveRules(rules);
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.remove("hidden");
+      clearTimeout(window._t);
+      window._t = setTimeout(() => el.classList.add("hidden"), 3000);
     }
 
-    function renderRules() {
-      const rules = loadRules();
-      ['titles', 'bcodes'].forEach(type => {
-        const container = document.getElementById(`tags-${type}`);
-        container.innerHTML = rules[type].map(item => `
-          <div class="tag">
-            <span>${item}</span>
-            <span class="remove-btn" onclick="removeRule('${type}', '${item}')">&times;</span>
-          </div>
-        `).join('');
-      });
+    function renderAll() {
+      applyTheme();
+      renderTabs();
+      renderHero();
+      renderCategories();
+      renderGrid();
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      initCategories();
-      renderRules();
-      initSims();
-      
-      const bridge = getBridge();
-      if (bridge && bridge.syncDeviceSms) {
-        try { bridge.syncDeviceSms(); } catch(e) {}
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") {
+        closeDetailModal();
+        closeAddCityModal();
+        closeAddEntryModal();
+        closeBackupModal();
       }
-
-      loadAllMessages();
     });
+
+    renderAll();
   </script>
 </body>
 </html>

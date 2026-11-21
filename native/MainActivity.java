@@ -1,470 +1,263 @@
 package com.erhan.apkfabrika;
 
-import android.content.ContentResolver;
+import android.Manifest;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.ContactsContract;
-import android.telephony.SmsManager;
-import android.telephony.SubscriptionInfo;
-import android.telephony.SubscriptionManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import com.getcapacitor.BridgeActivity;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class MainActivity extends BridgeActivity {
-    private static final String PREF_NAME = "SMS_FILTER_STORE";
-    private static final String BACKUP_DIR_NAME = "SmsFilterBackup";
-    private static final String BACKUP_FILE_NAME = "backup_data.json";
+    private static final String PREF_NAME = "SEHIR_REHBERI_STORE";
+    private static final String KEY_GUIDE_DATA = "guide_data_json";
+    private static final String BACKUP_DIR_NAME = "SehirRehberiBackup";
+    private static final String PRIMARY_BACKUP_FILE = "rehber_yedek.json";
+    private static final int REQ_STORAGE_PERM = 1001;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        restoreFromPersistentFile();
+        requestStoragePermissionIfNeeded();
+        restoreFromPersistentFileIfPrefsEmpty();
 
         WebView webView = this.getBridge().getWebView();
         webView.addJavascriptInterface(new Object() {
-            
+
             @JavascriptInterface
-            public String getMessages(String key) {
+            public String loadGuideData() {
+                // Önce telefondaki kalıcı dosyadan okumayı dene (uygulama silinip yüklense bile kurtarır)
+                String fileData = readFileSafe(getPrimaryBackupFile());
+                if (fileData != null && !fileData.trim().isEmpty()) {
+                    SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                    prefs.edit().putString(KEY_GUIDE_DATA, fileData).apply();
+                    return fileData;
+                }
+                // İkincil uygulama içi harici klasörden dene
+                String appFileData = readFileSafe(getAppBackupFile());
+                if (appFileData != null && !appFileData.trim().isEmpty()) {
+                    return appFileData;
+                }
+                // Son çare SharedPreferences
                 SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-                return prefs.getString(key, "[]");
+                return prefs.getString(KEY_GUIDE_DATA, "");
             }
 
             @JavascriptInterface
-            public void saveStoreData(String key, String value) {
-                SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-                prefs.edit().putString(key, value).apply();
-                saveToPersistentFile();
-            }
-
-            @JavascriptInterface
-            public boolean deleteMessage(String key, long messageId) {
+            public boolean saveGuideData(String json) {
+                if (json == null) return false;
                 try {
                     SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-                    String data = prefs.getString(key, "[]");
-                    JSONArray array = new JSONArray(data);
-                    JSONArray newArray = new JSONArray();
+                    prefs.edit().putString(KEY_GUIDE_DATA, json).apply();
 
-                    for (int i = 0; i < array.length(); i++) {
-                        JSONObject obj = array.getJSONObject(i);
-                        if (obj.optLong("id") != messageId) {
-                            newArray.put(obj);
-                        }
-                    }
-
-                    // Silinen ID'yi kara listeye ekle
-                    addToDeletedBlacklist(messageId);
-                    // Sistem SMS veritabanindan da temizlemeyi dene
-                    deleteSystemSms(messageId);
-
-                    prefs.edit().putString(key, newArray.toString()).apply();
-                    saveToPersistentFile();
-                    return true;
+                    boolean publicSaved = writeFileSafe(getPrimaryBackupFile(), json);
+                    boolean appSaved = writeFileSafe(getAppBackupFile(), json);
+                    return publicSaved || appSaved;
                 } catch (Exception e) {
                     return false;
                 }
             }
 
             @JavascriptInterface
-            public boolean deleteMessagesBulk(String key, String idsJson) {
+            public String createManualBackup(String json) {
                 try {
-                    SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-                    String data = prefs.getString(key, "[]");
-                    JSONArray array = new JSONArray(data);
-                    JSONArray idsArray = new JSONArray(idsJson);
-                    JSONArray newArray = new JSONArray();
-
-                    Set<Long> toDelete = new HashSet<>();
-                    for (int j = 0; j < idsArray.length(); j++) {
-                        toDelete.add(idsArray.getLong(j));
-                        addToDeletedBlacklist(idsArray.getLong(j));
-                        deleteSystemSms(idsArray.getLong(j));
+                    if (json == null || json.trim().isEmpty()) {
+                        json = loadGuideData();
                     }
+                    String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(new Date());
+                    String fileName = "yedek_" + timestamp + ".json";
 
-                    for (int i = 0; i < array.length(); i++) {
-                        JSONObject obj = array.getJSONObject(i);
-                        if (!toDelete.contains(obj.optLong("id"))) {
-                            newArray.put(obj);
-                        }
+                    File dir = getBackupDirectory();
+                    if (!dir.exists()) dir.mkdirs();
+
+                    File snapshot = new File(dir, fileName);
+                    if (writeFileSafe(snapshot, json)) {
+                        writeFileSafe(getPrimaryBackupFile(), json);
+                        return snapshot.getAbsolutePath();
                     }
-
-                    prefs.edit().putString(key, newArray.toString()).apply();
-                    saveToPersistentFile();
-                    return true;
+                    // Fallback to app external dir
+                    File appDir = getAppBackupDirectory();
+                    if (!appDir.exists()) appDir.mkdirs();
+                    File appSnap = new File(appDir, fileName);
+                    if (writeFileSafe(appSnap, json)) {
+                        return appSnap.getAbsolutePath();
+                    }
+                    return "";
                 } catch (Exception e) {
-                    return false;
+                    return "";
                 }
             }
 
             @JavascriptInterface
-            public boolean moveMessage(String fromKey, String toKey, long messageId) {
+            public String listBackupFiles() {
+                JSONArray list = new JSONArray();
                 try {
-                    SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-                    JSONArray fromArr = new JSONArray(prefs.getString(fromKey, "[]"));
-                    JSONArray toArr = new JSONArray(prefs.getString(toKey, "[]"));
-                    JSONArray newFromArr = new JSONArray();
-
-                    JSONObject targetObj = null;
-                    for (int i = 0; i < fromArr.length(); i++) {
-                        JSONObject obj = fromArr.getJSONObject(i);
-                        if (obj.optLong("id") == messageId) {
-                            targetObj = obj;
-                        } else {
-                            newFromArr.put(obj);
-                        }
-                    }
-
-                    if (targetObj != null) {
-                        toArr.put(targetObj);
-                        prefs.edit()
-                            .putString(fromKey, newFromArr.toString())
-                            .putString(toKey, toArr.toString())
-                            .apply();
-                        saveToPersistentFile();
-                        return true;
-                    }
-                    return false;
-                } catch (Exception e) {
-                    return false;
-                }
-            }
-
-            @JavascriptInterface
-            public String getActiveSimSlots() {
-                JSONArray simArray = new JSONArray();
-                try {
-                    SubscriptionManager sm = (SubscriptionManager) getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
-                    List<SubscriptionInfo> infoList = sm.getActiveSubscriptionInfoList();
-                    if (infoList != null) {
-                        for (SubscriptionInfo info : infoList) {
-                            JSONObject simObj = new JSONObject();
-                            simObj.put("subId", info.getSubscriptionId());
-                            simObj.put("slotIndex", info.getSimSlotIndex() + 1);
-                            CharSequence carrier = info.getCarrierName();
-                            simObj.put("carrier", carrier != null ? carrier.toString() : ("SIM " + (info.getSimSlotIndex() + 1)));
-                            simArray.put(simObj);
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return simArray.toString();
-            }
-
-            @JavascriptInterface
-            public boolean sendSms(String phoneNumber, String message, int subId) {
-                try {
-                    SmsManager smsManager;
-                    if (subId > 0 && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP_MR1) {
-                        smsManager = SmsManager.getSmsManagerForSubscriptionId(subId);
-                    } else {
-                        smsManager = SmsManager.getDefault();
-                    }
-                    smsManager.sendTextMessage(phoneNumber, null, message, null, null);
-
-                    SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-                    String sentData = prefs.getString("sent_messages", "[]");
-                    JSONArray sentArray = new JSONArray(sentData);
-
-                    JSONObject sentObj = new JSONObject();
-                    sentObj.put("id", System.currentTimeMillis());
-                    sentObj.put("recipient", phoneNumber);
-                    sentObj.put("body", message);
-                    sentObj.put("simSlot", subId > 0 ? ("SIM " + subId) : "SIM 1");
-                    
-                    SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
-                    sentObj.put("date", sdf.format(new Date()));
-
-                    sentArray.put(sentObj);
-                    prefs.edit().putString("sent_messages", sentArray.toString()).apply();
-                    saveToPersistentFile();
-                    return true;
-                } catch (Exception e) {
-                    return false;
-                }
-            }
-
-            @JavascriptInterface
-            public String getContactName(String phoneNumber) {
-                if (phoneNumber == null || phoneNumber.trim().isEmpty()) return "";
-                try {
-                    ContentResolver cr = getContentResolver();
-                    Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber));
-                    Cursor cursor = cr.query(uri, new String[]{ContactsContract.PhoneLookup.DISPLAY_NAME}, null, null, null);
-                    if (cursor != null) {
-                        if (cursor.moveToFirst()) {
-                            int nameIndex = cursor.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME);
-                            if (nameIndex != -1) {
-                                String name = cursor.getString(nameIndex);
-                                cursor.close();
-                                return name != null ? name : "";
+                    File dir = getBackupDirectory();
+                    if (!dir.exists()) dir = getAppBackupDirectory();
+                    File[] files = dir.listFiles();
+                    if (files != null) {
+                        Arrays.sort(files, new Comparator<File>() {
+                            @Override
+                            public int compare(File f1, File f2) {
+                                return Long.compare(f2.lastModified(), f1.lastModified());
+                            }
+                        });
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault());
+                        for (File f : files) {
+                            if (f.isFile() && f.getName().endsWith(".json")) {
+                                JSONObject obj = new JSONObject();
+                                obj.put("name", f.getName());
+                                obj.put("path", f.getAbsolutePath());
+                                obj.put("size", f.length());
+                                obj.put("date", sdf.format(new Date(f.lastModified())));
+                                list.put(obj);
                             }
                         }
-                        cursor.close();
+                    }
+                } catch (Exception e) {}
+                return list.toString();
+            }
+
+            @JavascriptInterface
+            public String restoreBackupFile(String fileName) {
+                try {
+                    File f = new File(getBackupDirectory(), fileName);
+                    if (!f.exists()) {
+                        f = new File(getAppBackupDirectory(), fileName);
+                    }
+                    if (!f.exists()) return "";
+                    String content = readFileSafe(f);
+                    if (content != null && !content.trim().isEmpty()) {
+                        saveGuideData(content);
+                        return content;
                     }
                 } catch (Exception e) {}
                 return "";
             }
 
             @JavascriptInterface
-            public String getAllContacts() {
-                JSONArray contacts = new JSONArray();
-                try {
-                    ContentResolver cr = getContentResolver();
-                    Cursor cursor = cr.query(
-                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                        new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER},
-                        null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
-                    );
-                    if (cursor != null) {
-                        while (cursor.moveToNext()) {
-                            int nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
-                            int numIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-                            if (nameIdx != -1 && numIdx != -1) {
-                                String name = cursor.getString(nameIdx);
-                                String number = cursor.getString(numIdx);
-                                if (name != null && number != null) {
-                                    JSONObject c = new JSONObject();
-                                    c.put("name", name);
-                                    c.put("phone", number.replaceAll("\\s+", ""));
-                                    contacts.put(c);
-                                }
-                            }
-                        }
-                        cursor.close();
-                    }
-                } catch (Exception e) {}
-                return contacts.toString();
+            public String getBackupDirectoryPath() {
+                File dir = getBackupDirectory();
+                return dir.getAbsolutePath();
             }
 
             @JavascriptInterface
-            public int syncDeviceSms() {
-                int importedCount = 0;
+            public void openExternalUrl(String url) {
                 try {
-                    SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-                    String rulesJson = prefs.getString("rules", "{\"titles\":[\"BAHIS\",\"BET\",\"KASINO\"],\"bcodes\":[\"B214\",\"B002\"]}");
-                    JSONObject rulesObj = new JSONObject(rulesJson);
-                    JSONArray blockedTitles = rulesObj.optJSONArray("titles");
-                    JSONArray blockedBcodes = rulesObj.optJSONArray("bcodes");
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                } catch (Exception e) {}
+            }
 
-                    // Silinmis ID'leri al
-                    Set<Long> deletedSet = getDeletedBlacklist();
-
-                    JSONArray inboxArray = new JSONArray(prefs.getString("inbox_messages", "[]"));
-                    JSONArray sentArray = new JSONArray(prefs.getString("sent_messages", "[]"));
-                    JSONArray spamArray = new JSONArray(prefs.getString("spam_messages", "[]"));
-
-                    ContentResolver cr = getContentResolver();
-                    Cursor cursor = cr.query(Uri.parse("content://sms"), null, null, null, "date DESC LIMIT 300");
-
-                    if (cursor != null && cursor.moveToFirst()) {
-                        int addressIdx = cursor.getColumnIndex("address");
-                        int bodyIdx = cursor.getColumnIndex("body");
-                        int dateIdx = cursor.getColumnIndex("date");
-                        int typeIdx = cursor.getColumnIndex("type");
-                        int subIdIdx = cursor.getColumnIndex("sub_id");
-
-                        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
-
-                        do {
-                            long timestamp = cursor.getLong(dateIdx);
-
-                            // KULLANICI BU MESAJI DAHA ONCE SILDIYSE KESINLIKLE ATLA
-                            if (deletedSet.contains(timestamp)) {
-                                continue;
-                            }
-
-                            // Zaten yerel listede varsa atla
-                            if (isAlreadyExists(inboxArray, timestamp) || isAlreadyExists(sentArray, timestamp) || isAlreadyExists(spamArray, timestamp)) {
-                                continue;
-                            }
-
-                            String address = cursor.getString(addressIdx);
-                            String body = cursor.getString(bodyIdx);
-                            int type = cursor.getInt(typeIdx);
-                            int subId = subIdIdx != -1 ? cursor.getInt(subIdIdx) : 1;
-
-                            if (address == null || body == null) continue;
-
-                            String simTag = "SIM " + (subId <= 1 ? "1" : "2");
-                            String formattedDate = sdf.format(new Date(timestamp));
-
-                            if (type == 2) {
-                                JSONObject sentItem = new JSONObject();
-                                sentItem.put("id", timestamp);
-                                sentItem.put("recipient", address);
-                                sentItem.put("body", body);
-                                sentItem.put("date", formattedDate);
-                                sentItem.put("simSlot", simTag);
-                                sentArray.put(sentItem);
-                                importedCount++;
-                            } else {
-                                boolean isSpam = false;
-                                String reason = "";
-
-                                if (blockedTitles != null) {
-                                    for (int i = 0; i < blockedTitles.length(); i++) {
-                                        if (address.toUpperCase().contains(blockedTitles.getString(i))) {
-                                            isSpam = true;
-                                            reason = "Baslik: " + blockedTitles.getString(i);
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                if (!isSpam && blockedBcodes != null) {
-                                    Pattern bCodePattern = Pattern.compile("(?i)(B\\d{3})\\b");
-                                    Matcher matcher = bCodePattern.matcher(body);
-                                    while (matcher.find()) {
-                                        String foundCode = matcher.group(1).toUpperCase();
-                                        for (int i = 0; i < blockedBcodes.length(); i++) {
-                                            if (foundCode.equals(blockedBcodes.getString(i))) {
-                                                isSpam = true;
-                                                reason = "B-Kodu: " + foundCode;
-                                                break;
-                                            }
-                                        }
-                                        if (isSpam) break;
-                                    }
-                                }
-
-                                JSONObject msg = new JSONObject();
-                                msg.put("id", timestamp);
-                                msg.put("sender", address);
-                                msg.put("body", isSpam ? body.replaceAll("https?://\\S+", "[BAGLANTI ETKISIZLESTIRILDI]") : body);
-                                msg.put("date", formattedDate);
-                                msg.put("simSlot", simTag);
-
-                                if (isSpam) {
-                                    msg.put("reason", reason);
-                                    spamArray.put(msg);
-                                } else {
-                                    inboxArray.put(msg);
-                                }
-                                importedCount++;
-                            }
-
-                        } while (cursor.moveToNext());
-                        cursor.close();
-                    }
-
-                    prefs.edit()
-                        .putString("inbox_messages", inboxArray.toString())
-                        .putString("sent_messages", sentArray.toString())
-                        .putString("spam_messages", spamArray.toString())
-                        .apply();
-
-                    saveToPersistentFile();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return importedCount;
+            @JavascriptInterface
+            public void copyToClipboard(String text) {
+                try {
+                    ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    ClipData clip = ClipData.newPlainText("Konum", text);
+                    if (clipboard != null) clipboard.setPrimaryClip(clip);
+                } catch (Exception e) {}
             }
 
         }, "AndroidBridge");
     }
 
-    private void deleteSystemSms(long timestamp) {
-        try {
-            getContentResolver().delete(Uri.parse("content://sms"), "date=?", new String[]{String.valueOf(timestamp)});
-        } catch (Exception e) {}
-    }
-
-    private void addToDeletedBlacklist(long id) {
-        SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        String current = prefs.getString("deleted_ids", "[]");
-        try {
-            JSONArray arr = new JSONArray(current);
-            arr.put(id);
-            prefs.edit().putString("deleted_ids", arr.toString()).apply();
-        } catch(Exception e) {}
-    }
-
-    private Set<Long> getDeletedBlacklist() {
-        Set<Long> set = new HashSet<>();
-        SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        try {
-            JSONArray arr = new JSONArray(prefs.getString("deleted_ids", "[]"));
-            for (int i = 0; i < arr.length(); i++) {
-                set.add(arr.getLong(i));
+    private void requestStoragePermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+            boolean readOk = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+            boolean writeOk = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+            if (!readOk || !writeOk) {
+                ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQ_STORAGE_PERM);
             }
-        } catch(Exception e) {}
-        return set;
-    }
-
-    private boolean isAlreadyExists(JSONArray array, long id) {
-        for (int i = 0; i < array.length(); i++) {
-            JSONObject obj = array.optJSONObject(i);
-            if (obj != null && obj.optLong("id") == id) return true;
         }
-        return false;
     }
 
-    private synchronized void saveToPersistentFile() {
+    private File getBackupDirectory() {
+        File docsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+        File backupDir = new File(docsDir, BACKUP_DIR_NAME);
+        if (!backupDir.exists()) backupDir.mkdirs();
+        return backupDir;
+    }
+
+    private File getPrimaryBackupFile() {
+        return new File(getBackupDirectory(), PRIMARY_BACKUP_FILE);
+    }
+
+    private File getAppBackupDirectory() {
+        File extDocs = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+        if (extDocs == null) extDocs = getFilesDir();
+        File dir = new File(extDocs, BACKUP_DIR_NAME);
+        if (!dir.exists()) dir.mkdirs();
+        return dir;
+    }
+
+    private File getAppBackupFile() {
+        return new File(getAppBackupDirectory(), PRIMARY_BACKUP_FILE);
+    }
+
+    private synchronized boolean writeFileSafe(File file, String content) {
         try {
-            File docsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-            File backupDir = new File(docsDir, BACKUP_DIR_NAME);
-            if (!backupDir.exists()) backupDir.mkdirs();
-
-            File file = new File(backupDir, BACKUP_FILE_NAME);
-            SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-
-            JSONObject root = new JSONObject();
-            root.put("rules", prefs.getString("rules", ""));
-            root.put("inbox_messages", prefs.getString("inbox_messages", "[]"));
-            root.put("sent_messages", prefs.getString("sent_messages", "[]"));
-            root.put("spam_messages", prefs.getString("spam_messages", "[]"));
-            root.put("deleted_ids", prefs.getString("deleted_ids", "[]"));
-            root.put("categories", prefs.getString("categories", "[]")); // Dinamik Sekmeler
-
+            File parent = file.getParentFile();
+            if (parent != null && !parent.exists()) parent.mkdirs();
             FileOutputStream fos = new FileOutputStream(file);
-            fos.write(root.toString().getBytes("UTF-8"));
+            fos.write(content.getBytes("UTF-8"));
             fos.flush();
             fos.close();
-        } catch (Exception e) {}
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
-    private synchronized void restoreFromPersistentFile() {
+    private synchronized String readFileSafe(File file) {
         try {
-            File docsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-            File backupDir = new File(docsDir, BACKUP_DIR_NAME);
-            File file = new File(backupDir, BACKUP_FILE_NAME);
-
-            if (!file.exists()) return;
-
+            if (file == null || !file.exists() || !file.isFile()) return "";
             FileInputStream fis = new FileInputStream(file);
-            byte[] data = new byte[(int) file.length()];
-            fis.read(data);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int len;
+            while ((len = fis.read(buffer)) != -1) {
+                bos.write(buffer, 0, len);
+            }
             fis.close();
+            return bos.toString("UTF-8");
+        } catch (Exception e) {
+            return "";
+        }
+    }
 
-            JSONObject root = new JSONObject(new String(data, "UTF-8"));
+    private void restoreFromPersistentFileIfPrefsEmpty() {
+        try {
             SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = prefs.edit();
-
-            if (root.has("rules")) editor.putString("rules", root.getString("rules"));
-            if (root.has("inbox_messages")) editor.putString("inbox_messages", root.getString("inbox_messages"));
-            if (root.has("sent_messages")) editor.putString("sent_messages", root.getString("sent_messages"));
-            if (root.has("spam_messages")) editor.putString("spam_messages", root.getString("spam_messages"));
-            if (root.has("deleted_ids")) editor.putString("deleted_ids", root.getString("deleted_ids"));
-            if (root.has("categories")) editor.putString("categories", root.getString("categories"));
-            editor.apply();
+            String current = prefs.getString(KEY_GUIDE_DATA, "");
+            if (current == null || current.trim().isEmpty()) {
+                String fromFile = readFileSafe(getPrimaryBackupFile());
+                if (fromFile != null && !fromFile.trim().isEmpty()) {
+                    prefs.edit().putString(KEY_GUIDE_DATA, fromFile).apply();
+                }
+            }
         } catch (Exception e) {}
     }
 }
