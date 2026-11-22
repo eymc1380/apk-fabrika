@@ -42,7 +42,8 @@ jobs:
           [ -f native/launch_screen.xml ] && cp native/launch_screen.xml android/app/src/main/res/drawable/launch_screen.xml || true
           [ -f native/ic_launcher_foreground.xml ] && cp native/ic_launcher_foreground.xml android/app/src/main/res/drawable/ic_launcher_foreground.xml || true
 
-          # Masaüstü İkonunu Şehir Rehberi Vektörüne Zorla (Android 8+)
+          # Masaüstü İkonunu Şehir Rehberi İkonuna Zorla (Tüm Yoğunluklar + Android 8+)
+          python3 native/gen_icons.py android/app/src/main/res
           mkdir -p android/app/src/main/res/mipmap-anydpi-v26
           printf '<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n    <background android:drawable="@color/splash_bg"/>\n    <foreground android:drawable="@drawable/ic_launcher_foreground"/>\n</adaptive-icon>\n' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           cp android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
