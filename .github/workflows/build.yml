@@ -44,16 +44,8 @@ jobs:
 
           # Masaüstü İkonunu Şehir Rehberi Vektörüne Zorla (Android 8+)
           mkdir -p android/app/src/main/res/mipmap-anydpi-v26
-          python3 -c '
-xml = """<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/splash_bg"/>
-    <foreground android:drawable="@drawable/ic_launcher_foreground"/>
-</adaptive-icon>
-"""
-open("android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml", "w").write(xml)
-open("android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml", "w").write(xml)
-'
+          printf '<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n    <background android:drawable="@color/splash_bg"/>\n    <foreground android:drawable="@drawable/ic_launcher_foreground"/>\n</adaptive-icon>\n' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          cp android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
       - name: 5. Sabit Keystore Oluştur ve Gradle'a Tanımla
         run: |
